@@ -132,7 +132,7 @@ export function RaceCard({
               <div className={styles.silkCell} style={{ width: SILK_COLUMN_WIDTH, flex: `0 0 ${SILK_COLUMN_WIDTH}px` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={getSilkUrl(horse.silkAssetKey, horse.name, idx)}
+                  src={getSilkUrl(horse.silkImage, horse.silkAssetKey, horse.name, idx)}
                   alt={`${horse.name} silk`}
                   className={styles.silkImage}
                 />

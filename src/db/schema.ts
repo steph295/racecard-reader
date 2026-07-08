@@ -86,6 +86,8 @@ export const runners = pgTable("runners", {
   nonRunner: boolean("non_runner").notNull().default(false),
   subnote: text("subnote"),
   silkAssetKey: text("silk_asset_key"),
+  // Silk artwork extracted from the uploaded PDF, stored as a PNG data URI.
+  silkImage: text("silk_image"),
 }, (t) => ({
   raceIdx: index("runners_race_idx").on(t.raceId),
   raceNoIdx: uniqueIndex("runners_race_no_idx").on(t.raceId, t.no),

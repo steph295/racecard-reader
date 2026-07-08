@@ -26,6 +26,8 @@ export interface RawRunner {
   name: string;
   nr?: boolean | null;
   silkSrc?: string | null;
+  /** PNG data URI extracted from the uploaded PDF, if we found one. */
+  silkImage?: string | null;
   subnote?: string | null;
   sire?: string | null;
   dam?: string | null;
@@ -128,6 +130,7 @@ export interface RunnerDTO {
   nonRunner: boolean;
   subnote: string | null;
   silkAssetKey: string | null;
+  silkImage: string | null;
   reports: ReportDTO[];
   noteBody: string;
 }

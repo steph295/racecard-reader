@@ -8,6 +8,7 @@ import {
   saveStructuredMeeting,
 } from "@/lib/meetingRepo";
 import { detectUploadKind, extractTextFromCsv, extractTextFromPdf } from "@/lib/parsing/extractText";
+import { extractSilksFromPdf } from "@/lib/parsing/extractSilks";
 import { structureRaceMeeting } from "@/lib/parsing/structure";
 
 export async function GET() {
@@ -72,6 +73,27 @@ async function processUpload(
     await saveRawExtractedText(meetingId, rawText);
 
     const extraction = await structureRaceMeeting(rawText);
+
+    // Silk artwork is embedded as images in the PDF, one per runner in
+    // saddlecloth order. Extraction is best-effort: if counts don't line up
+    // we skip attaching rather than risk showing the wrong colours.
+    if (kind === "pdf") {
+      try {
+        const silks = await extractSilksFromPdf(bytes);
+        const allRunners = extraction.races.flatMap((race) => race.runners);
+        if (silks.length === allRunners.length) {
+          allRunners.forEach((runner, i) => {
+            (runner as { silkImage?: string }).silkImage = silks[i];
+          });
+        } else {
+          console.warn(
+            `Silk extraction: found ${silks.length} silk images for ${allRunners.length} runners — skipping.`
+          );
+        }
+      } catch (silkErr) {
+        console.warn("Silk extraction failed (continuing without silks):", silkErr);
+      }
+    }
 
     await saveStructuredMeeting(
       userId,

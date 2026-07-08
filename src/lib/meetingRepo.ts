@@ -86,6 +86,7 @@ export async function saveStructuredMeeting(
             nonRunner: !!runner.nr,
             subnote: runner.subnote ?? null,
             silkAssetKey: silkMatch ? `silk-${silkMatch[1]}` : null,
+            silkImage: runner.silkImage ?? null,
           })
           .returning({ id: schema.runners.id });
 
@@ -223,6 +224,7 @@ export async function getMeetingDetail(
         nonRunner: runner.nonRunner,
         subnote: runner.subnote,
         silkAssetKey: runner.silkAssetKey,
+        silkImage: runner.silkImage,
         noteBody: runner.notes[0]?.body ?? "",
         reports: runner.reports.map((report) => ({
           id: report.id,

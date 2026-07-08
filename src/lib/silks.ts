@@ -4,12 +4,17 @@ const PLACEHOLDER_PALETTE = [
 ];
 
 /**
- * Real silks are stored under /public/silks/{key}.png. Horses without a
- * matched silk (most real-world uploads, until you wire up real silk
- * artwork/lookup) get a generated colour-coded initial, same as the
- * prototype's placeholder logic.
+ * Priority: silk artwork extracted from the uploaded PDF (a data URI), then
+ * bundled assets under /public/silks/{key}.png, then a generated
+ * colour-coded initial as a last resort.
  */
-export function getSilkUrl(silkAssetKey: string | null, name: string, indexInRace: number): string {
+export function getSilkUrl(
+  silkImage: string | null,
+  silkAssetKey: string | null,
+  name: string,
+  indexInRace: number
+): string {
+  if (silkImage) return silkImage;
   if (silkAssetKey) return `/silks/${silkAssetKey}.png`;
 
   const color = PLACEHOLDER_PALETTE[indexInRace % PLACEHOLDER_PALETTE.length];
