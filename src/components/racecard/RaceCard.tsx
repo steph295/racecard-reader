@@ -130,11 +130,11 @@ export function RaceCard({
           <div key={horse.id} className={`${styles.row} ${horse.nonRunner ? styles.rowNonRunner : ""}`}>
             {visibility.silk && (
               <div className={styles.silkCell} style={{ width: SILK_COLUMN_WIDTH, flex: `0 0 ${SILK_COLUMN_WIDTH}px` }}>
-                <div
-                  role="img"
-                  aria-label="Silks"
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getSilkUrl(horse.silkAssetKey, horse.name, idx)}
+                  alt={`${horse.name} silk`}
                   className={styles.silkImage}
-                  style={{ backgroundImage: `url('${getSilkUrl(horse.silkAssetKey, horse.name, idx)}')` }}
                 />
               </div>
             )}

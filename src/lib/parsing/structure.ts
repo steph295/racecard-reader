@@ -35,7 +35,7 @@ const recordMeetingTool: Anthropic.Tool = {
                   or: { type: "integer", description: "Official rating, if shown." },
                   name: { type: "string" },
                   nr: { type: "boolean", description: "True if declared a non-runner." },
-                  subnote: { type: "string", description: "Any short flag, e.g. 'Non-runner · Not eaten up', 'Sampled 21/05/25'." },
+                  subnote: { type: "string", description: "A very brief status flag only — e.g. 'Non-runner', 'Self Cert (Not Eaten Up)'. Do NOT put dated history (sampling records, vet checks, etc.) here; those go in reports." },
                   sire: { type: "string" },
                   dam: { type: "string" },
                   ageSex: { type: "string", description: "e.g. '5yo B G'." },
@@ -45,7 +45,7 @@ const recordMeetingTool: Anthropic.Tool = {
                   owner: { type: "string" },
                   reports: {
                     type: "array",
-                    description: "Chronological stewards/vet/rider report history for this horse, oldest or newest first as printed.",
+                    description: "ALL dated history for this horse: stewards enquiries, vet reports, rider reports, trainer notes, sampling records (e.g. 'Sampled 21/05/25'), post-race checks, or any other dated note. Oldest or newest first as printed.",
                     items: {
                       type: "object",
                       properties: {
@@ -83,7 +83,13 @@ const recordMeetingTool: Anthropic.Tool = {
 
 const SYSTEM_PROMPT = `You are extracting structured data from the raw text of a horse racing racecard (a PDF or CSV export). The text may be messy - columns can be interleaved, whitespace collapsed, and page breaks visible as "--- page N ---" markers.
 
-Reconstruct every race in order, and every runner within each race in racing/saddlecloth-number order. Include every stewards enquiry, vet report, rider report, or note you can find for each horse, in chronological order. If a field genuinely isn't present in the source, omit it rather than guessing. Call the record_meeting tool exactly once with the complete result.`;
+Reconstruct every race in order, and every runner within each race in racing/saddlecloth-number order.
+
+For every horse, capture ALL dated history as report entries — including stewards enquiries, vet reports, rider reports, trainer notes, sampling records (e.g. "Sampled 21/05/25"), post-race checks, or any other dated annotation. Each distinct date/track block becomes one report entry with one or more items. Use "Vet Note" as the cat for sampling/vet-check entries, "Stewards Enquiry" for stewards, "Rider Report" for jockey/rider reports, "Trainer Note" for trainer/owner annotations, and "Note" as a fallback.
+
+Only use subnote for a very brief current-status flag (e.g. "Non-runner", "Self Cert") — never for dated history.
+
+If a field genuinely isn't present in the source, omit it rather than guessing. Call the record_meeting tool exactly once with the complete result.`;
 
 function getClient(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;

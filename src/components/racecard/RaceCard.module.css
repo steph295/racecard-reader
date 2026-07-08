@@ -82,13 +82,11 @@
 }
 
 .silkImage {
-  width: 100%;
-  max-width: 56px;
-  aspect-ratio: 1;
+  display: block;
+  width: 44px;
+  height: 44px;
   border-radius: 9px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  object-fit: contain;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
