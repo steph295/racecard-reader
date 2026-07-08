@@ -1,10 +1,9 @@
 /**
- * Runs drizzle migration SQL files against DATABASE_URL on startup.
- * Reads drizzle/_journal.json to find which migrations to apply, then
- * executes each SQL file that hasn't been applied yet.
+ * Runs all *.sql migration files in /drizzle on startup (idempotent).
+ * Tracks applied migrations in a __drizzle_migrations table.
  */
 import postgres from "postgres";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -20,41 +19,39 @@ if (!url) {
 const sql = postgres(url, { max: 1 });
 
 try {
-  // Ensure the drizzle migrations table exists
   await sql`
     CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
       id SERIAL PRIMARY KEY,
-      hash TEXT NOT NULL,
+      hash TEXT NOT NULL UNIQUE,
       created_at BIGINT
     )
   `;
 
-  const journal = JSON.parse(
-    readFileSync(join(drizzleDir, "meta", "_journal.json"), "utf8")
-  );
-
   const applied = await sql`SELECT hash FROM "__drizzle_migrations"`;
-  const appliedHashes = new Set(applied.map((r) => r.hash));
+  const appliedSet = new Set(applied.map((r) => r.hash));
 
-  for (const entry of journal.entries) {
-    if (appliedHashes.has(entry.tag)) {
-      console.log(`Migration already applied: ${entry.tag}`);
+  const sqlFiles = readdirSync(drizzleDir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
+
+  for (const file of sqlFiles) {
+    if (appliedSet.has(file)) {
+      console.log(`Already applied: ${file}`);
       continue;
     }
-    const sqlFile = join(drizzleDir, `${entry.tag}.sql`);
-    const migrationSql = readFileSync(sqlFile, "utf8");
-    console.log(`Applying migration: ${entry.tag}`);
+    const migrationSql = readFileSync(join(drizzleDir, file), "utf8");
+    console.log(`Applying: ${file}`);
     await sql.unsafe(migrationSql);
     await sql`
       INSERT INTO "__drizzle_migrations" (hash, created_at)
-      VALUES (${entry.tag}, ${Date.now()})
+      VALUES (${file}, ${Date.now()})
     `;
-    console.log(`Migration applied: ${entry.tag}`);
+    console.log(`Done: ${file}`);
   }
 
-  console.log("Migrations complete.");
+  console.log("All migrations complete.");
 } catch (err) {
-  console.error("Migration failed:", err);
+  console.error("Migration error:", err.message);
   process.exit(1);
 } finally {
   await sql.end();
