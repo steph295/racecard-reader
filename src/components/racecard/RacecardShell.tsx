@@ -24,6 +24,7 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   const [onlyWithComments, setOnlyWithComments] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [printAll, setPrintAll] = useState(false);
+  const [printUnsupported, setPrintUnsupported] = useState(false);
 
   // Match the prototype: switching races clears the in-progress search.
   // Adjusting state during render (rather than in an effect) avoids an
@@ -38,6 +39,15 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   usePrintZoom(colWidths, visibility);
 
   const handlePrintAll = useCallback(() => {
+    // Embedded editor webviews (e.g. the Cursor/VS Code browser panel) can't
+    // show the native print dialog - calling window.print() there crashes the
+    // whole host window. Detect them and show guidance instead.
+    const ua = navigator.userAgent;
+    const isEmbeddedWebview = /Electron|Cursor|VSCode|Code\//i.test(ua);
+    if (isEmbeddedWebview) {
+      setPrintUnsupported(true);
+      return;
+    }
     setPrintAll(true);
     setTimeout(() => {
       window.print();
@@ -104,6 +114,26 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
       />
 
       <div className={`rc-shell ${styles.main}`}>
+        {printUnsupported && (
+          <div className={`rc-noprint ${styles.printNotice}`}>
+            <span>
+              Printing isn&apos;t supported in this embedded browser. Open{" "}
+              <strong>{typeof window !== "undefined" ? window.location.host : ""}</strong> in
+              Chrome or Safari and print from there.
+            </span>
+            <button
+              className={styles.printNoticeCopy}
+              onClick={() => {
+                void navigator.clipboard.writeText(window.location.href);
+              }}
+            >
+              Copy link
+            </button>
+            <button className={styles.printNoticeClose} onClick={() => setPrintUnsupported(false)}>
+              ✕
+            </button>
+          </div>
+        )}
         <div className={`rc-noprint ${styles.toolbar}`}>
           <FiltersPanel
             open={filtersOpen}
