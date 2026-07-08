@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMeeting, useSaveNote } from "@/lib/hooks/useMeetings";
 import { useColumnResize } from "@/lib/hooks/useColumnResize";
@@ -9,6 +9,50 @@ import { Sidebar } from "./Sidebar";
 import { FiltersPanel } from "./FiltersPanel";
 import { RaceCard } from "./RaceCard";
 import styles from "./RacecardShell.module.css";
+
+// Typical full-meeting parse takes 30–120s. We simulate a progress bar that
+// fills quickly at first then slows toward 90%, leaving the last 10% for the
+// actual completion signal (status flipping to "ready").
+const ESTIMATED_MS = 90_000;
+
+function ProcessingState({ createdAt }: { createdAt: string }) {
+  const startMs = new Date(createdAt).getTime();
+  const [elapsed, setElapsed] = useState(() => Date.now() - startMs);
+
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(Date.now() - startMs), 500);
+    return () => clearInterval(id);
+  }, [startMs]);
+
+  const rawPct = Math.min(elapsed / ESTIMATED_MS, 1);
+  // Ease toward 90% — never shows 100% until the page actually refreshes
+  const pct = Math.min(rawPct * 90, 90);
+
+  const secs = Math.floor(elapsed / 1000);
+  const mins = Math.floor(secs / 60);
+  const elapsedLabel = mins > 0 ? `${mins}m ${secs % 60}s` : `${secs}s`;
+
+  const steps = [
+    { label: "Extracting text from file", threshold: 0 },
+    { label: "Sending to AI for structuring", threshold: 8 },
+    { label: "Reading races and runners", threshold: 20 },
+    { label: "Parsing stewards & vet reports", threshold: 45 },
+    { label: "Saving to database", threshold: 82 },
+  ];
+  const currentStep = [...steps].reverse().find((s) => pct >= s.threshold)!;
+
+  return (
+    <div className={styles.processingWrap}>
+      <div className={styles.processingIcon}>⏳</div>
+      <div className={styles.processingTitle}>Reading your racecard…</div>
+      <div className={styles.processingStep}>{currentStep.label}</div>
+      <div className={styles.progressTrack}>
+        <div className={styles.progressBar} style={{ width: `${pct.toFixed(1)}%` }} />
+      </div>
+      <div className={styles.processingMeta}>{elapsedLabel} elapsed · full meetings can take up to 2 min</div>
+    </div>
+  );
+}
 
 interface RacecardShellProps {
   meetingId: string;
@@ -77,11 +121,7 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   }
 
   if (meeting.status === "processing" || meeting.status === "pending") {
-    return (
-      <div className={styles.centeredState}>
-        Reading your racecard… this can take up to a minute for a full meeting.
-      </div>
-    );
+    return <ProcessingState createdAt={meeting.createdAt} />;
   }
 
   if (meeting.status === "failed") {
