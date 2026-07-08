@@ -101,14 +101,29 @@ async function callModel(rawText: string, repairNotes?: string): Promise<unknown
     ? `${repairNotes}\n\nHere is the source text again:\n\n${rawText}`
     : rawText;
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-5",
-    max_tokens: 8192,
-    system: SYSTEM_PROMPT,
-    tools: [recordMeetingTool],
-    tool_choice: { type: "tool", name: RECORD_TOOL_NAME },
-    messages: [{ role: "user", content: userContent }],
-  });
+  // Streaming is mandatory for large max_tokens values (the SDK rejects
+  // non-streaming requests that could exceed its 10-minute ceiling); we
+  // still just collect the final message and use the completed tool input.
+  const response = await client.messages
+    .stream({
+      model: "claude-sonnet-4-5",
+      // Racecards with many runners + full report history produce large tool
+      // outputs; too small a limit truncates the JSON mid-`races` array, which
+      // then fails validation with "races: expected array, received undefined".
+      max_tokens: 32000,
+      system: SYSTEM_PROMPT,
+      tools: [recordMeetingTool],
+      tool_choice: { type: "tool", name: RECORD_TOOL_NAME },
+      messages: [{ role: "user", content: userContent }],
+    })
+    .finalMessage();
+
+  if (response.stop_reason === "max_tokens") {
+    throw new Error(
+      "The racecard is too large to structure in a single pass (model output was truncated). " +
+        "Try uploading a single race or a smaller meeting."
+    );
+  }
 
   const toolUse = response.content.find(
     (block): block is Anthropic.ToolUseBlock => block.type === "tool_use"
@@ -132,12 +147,26 @@ export async function structureRaceMeeting(rawText: string): Promise<MeetingExtr
   const firstResult = meetingExtractionSchema.safeParse(first);
   if (firstResult.success) return firstResult.data;
 
+  console.warn(
+    "Racecard extraction failed validation on first pass:",
+    JSON.stringify(firstResult.error.issues),
+    "— top-level keys returned:",
+    first && typeof first === "object" ? Object.keys(first) : typeof first
+  );
+
   const repaired = await callModel(
     truncated,
-    `Your previous record_meeting call failed validation with these errors:\n${firstResult.error.message}\n\nPlease call record_meeting again, fixing these issues.`
+    `Your previous record_meeting call failed validation with these errors:\n${firstResult.error.message}\n\nPlease call record_meeting again, fixing these issues. Make sure "races" is a non-empty array and every race has a non-empty "runners" array.`
   );
   const secondResult = meetingExtractionSchema.safeParse(repaired);
   if (secondResult.success) return secondResult.data;
+
+  console.error(
+    "Racecard extraction failed validation on repair pass:",
+    JSON.stringify(secondResult.error.issues),
+    "— top-level keys returned:",
+    repaired && typeof repaired === "object" ? Object.keys(repaired) : typeof repaired
+  );
 
   throw new Error(`Could not extract structured racecard data: ${secondResult.error.message}`);
 }

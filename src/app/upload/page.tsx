@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { useMeetingsList, useSeedDemoMeeting, useUploadMeeting } from "@/lib/hooks/useMeetings";
+import { useMeetingsList, useSeedDemoMeeting, useUploadMeeting, useDeleteMeeting } from "@/lib/hooks/useMeetings";
 import styles from "./page.module.css";
 
 function formatRelativeDate(iso: string): string {
@@ -20,9 +20,12 @@ export default function UploadPage() {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
   const { data: meetings, isLoading } = useMeetingsList();
   const uploadMutation = useUploadMeeting();
   const seedDemoMutation = useSeedDemoMeeting();
+  const deleteMutation = useDeleteMeeting();
 
   async function handleFile(file: File) {
     setError(null);
@@ -116,11 +119,13 @@ export default function UploadPage() {
         {meetings?.map((m) => {
           const failed = m.status === "failed";
           const processing = m.status === "processing";
+          const isConfirming = confirmDeleteId === m.id;
+          const isDeleting = deleteMutation.isPending && deleteMutation.variables === m.id;
           return (
             <div
               key={m.id}
               className={`${styles.uploadRow} ${failed ? styles.uploadRowDisabled : ""}`}
-              onClick={() => !failed && router.push(`/meetings/${m.id}/races/1`)}
+              onClick={() => !failed && !isConfirming && router.push(`/meetings/${m.id}/races/1`)}
             >
               <div>
                 <div className={styles.uploadName}>{m.courseName ?? m.sourceFileName}</div>
@@ -132,14 +137,42 @@ export default function UploadPage() {
                     : `${formatRelativeDate(m.createdAt)} · ${m.raceCount} races · ${m.runnerCount} runners`}
                 </div>
               </div>
-              {!processing && (
-                <span
-                  className={`${styles.badge} ${failed ? styles.badgeFailed : ""}`}
-                >
-                  {failed ? "Failed" : `${m.reportCount} reports`}
-                </span>
-              )}
-              {processing && <span className={`${styles.badge} ${styles.badgeProcessing}`}>Processing</span>}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                {!processing && (
+                  <span className={`${styles.badge} ${failed ? styles.badgeFailed : ""}`}>
+                    {failed ? "Failed" : `${m.reportCount} reports`}
+                  </span>
+                )}
+                {processing && <span className={`${styles.badge} ${styles.badgeProcessing}`}>Processing</span>}
+                {isConfirming ? (
+                  <>
+                    <button
+                      className={styles.deleteConfirmBtn}
+                      onClick={() => {
+                        deleteMutation.mutate(m.id, { onSuccess: () => setConfirmDeleteId(null) });
+                      }}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "…" : "Delete"}
+                    </button>
+                    <button
+                      className={styles.deleteCancelBtn}
+                      onClick={() => setConfirmDeleteId(null)}
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className={styles.deleteBtn}
+                    title="Delete"
+                    onClick={() => setConfirmDeleteId(m.id)}
+                  >
+                    🗑
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

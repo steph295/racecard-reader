@@ -177,3 +177,122 @@
   color: #999;
   padding: 8px 2px;
 }
+
+.deleteBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  opacity: 0.35;
+  transition: opacity 120ms ease, background 120ms ease;
+  flex: none;
+}
+
+.deleteBtn:hover {
+  opacity: 0.8;
+  background: #fdecea;
+}
+
+.deleteConfirmBtn {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.deleteConfirmBtn:hover {
+  background: #a93226;
+}
+
+.deleteConfirmBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.deleteCancelBtn {
+  background: none;
+  border: 1px solid #d6d6d6;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.deleteCancelBtn:hover {
+  border-color: #999;
+  color: #333;
+}
+
+.deleteCancelBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 15px;
+  opacity: 0.35;
+  transition: opacity 120ms ease, background 120ms ease;
+  line-height: 1;
+}
+
+.deleteBtn:hover {
+  opacity: 0.8;
+  background: #f5f5f5;
+}
+
+.deleteConfirmBtn {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #c0392b;
+  color: #fff;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.deleteConfirmBtn:hover:not(:disabled) {
+  background: #a93226;
+}
+
+.deleteConfirmBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.deleteCancelBtn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #d6d6d6;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  transition: border-color 120ms ease;
+}
+
+.deleteCancelBtn:hover:not(:disabled) {
+  border-color: #aaa;
+}
+
+.deleteCancelBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

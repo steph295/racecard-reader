@@ -129,6 +129,13 @@ export async function createPendingMeeting(ownerId: string, sourceFileName: stri
   return row.id;
 }
 
+export async function saveRawExtractedText(meetingId: string, rawText: string) {
+  await db
+    .update(schema.meetings)
+    .set({ rawExtractedText: rawText, updatedAt: new Date() })
+    .where(eq(schema.meetings.id, meetingId));
+}
+
 export async function markMeetingFailed(meetingId: string, errorMessage: string) {
   await db
     .update(schema.meetings)
@@ -255,6 +262,14 @@ export async function getMeetingDetail(
     reportCount,
     races,
   };
+}
+
+export async function deleteMeeting(ownerId: string, meetingId: string): Promise<boolean> {
+  const result = await db
+    .delete(schema.meetings)
+    .where(and(eq(schema.meetings.id, meetingId), eq(schema.meetings.ownerId, ownerId)))
+    .returning({ id: schema.meetings.id });
+  return result.length > 0;
 }
 
 export async function upsertNote(userId: string, runnerId: string, body: string) {

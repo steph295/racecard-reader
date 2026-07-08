@@ -4,6 +4,7 @@ import {
   createPendingMeeting,
   listMeetingsForUser,
   markMeetingFailed,
+  saveRawExtractedText,
   saveStructuredMeeting,
 } from "@/lib/meetingRepo";
 import { detectUploadKind, extractTextFromCsv, extractTextFromPdf } from "@/lib/parsing/extractText";
@@ -65,6 +66,10 @@ async function processUpload(
     if (!rawText.trim()) {
       throw new Error("Couldn't read any text from that file - is it a scanned image PDF?");
     }
+
+    // Persist raw text before structuring so failed parses can be inspected
+    // and re-run without re-uploading the original file.
+    await saveRawExtractedText(meetingId, rawText);
 
     const extraction = await structureRaceMeeting(rawText);
 

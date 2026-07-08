@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth/currentUser";
-import { getMeetingDetail } from "@/lib/meetingRepo";
+import { getMeetingDetail, deleteMeeting } from "@/lib/meetingRepo";
 
 export async function GET(
   _req: NextRequest,
@@ -14,4 +14,18 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return NextResponse.json({ meeting });
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ meetingId: string }> }
+) {
+  const userId = await requireUserId();
+  const { meetingId } = await params;
+
+  const deleted = await deleteMeeting(userId, meetingId);
+  if (!deleted) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true });
 }

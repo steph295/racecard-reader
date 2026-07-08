@@ -20,9 +20,18 @@ export function useMeetingsList() {
     queryKey: MEETINGS_KEY,
     queryFn: () => fetchJson<{ meetings: MeetingSummaryDTO[] }>("/api/meetings"),
     select: (data) => data.meetings,
-    // Cheap poll so "processing" uploads flip to "ready" without a manual refresh.
-    refetchInterval: (query) =>
-      query.state.data?.meetings.some((m) => m.status === "processing") ? 2000 : false,
+    // Poll only while uploads are genuinely in-flight (not failed/ready).
+    // Cap at 30s so a stuck processing record doesn't poll forever.
+    refetchInterval: (query) => {
+      const meetings = query.state.data?.meetings ?? [];
+      const hasProcessing = meetings.some((m) => m.status === "processing");
+      if (!hasProcessing) return false;
+      const oldestProcessing = meetings
+        .filter((m) => m.status === "processing")
+        .reduce((min, m) => Math.min(min, new Date(m.createdAt).getTime()), Infinity);
+      const ageMs = Date.now() - oldestProcessing;
+      return ageMs < 5 * 60 * 1000 ? 3000 : false; // stop polling after 5 min
+    },
   });
 }
 
@@ -55,6 +64,15 @@ export function useSeedDemoMeeting() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => fetchJson<{ meetingId: string }>("/api/meetings/seed-demo", { method: "POST" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: MEETINGS_KEY }),
+  });
+}
+
+export function useDeleteMeeting() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (meetingId: string) =>
+      fetchJson(`/api/meetings/${meetingId}`, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: MEETINGS_KEY }),
   });
 }
