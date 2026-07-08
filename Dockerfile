@@ -10,10 +10,17 @@ RUN npm install
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Only needed so `next build` doesn't fail while reading process.env at
-# build time - real values are supplied at runtime by your host.
+# NEXT_PUBLIC_* values are inlined into the client bundles at build time,
+# so the real publishable key must be provided as a build argument.
+# Railway passes service variables to Docker builds automatically.
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_placeholder"
+ARG NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
+ARG NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_SIGN_IN_URL
+ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_SIGN_UP_URL
+# Server-only values are read at runtime; placeholders keep `next build` happy.
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_placeholder"
 ENV CLERK_SECRET_KEY="sk_test_placeholder"
 RUN npm run build
 
