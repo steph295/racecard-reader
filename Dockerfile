@@ -31,4 +31,5 @@ COPY --from=builder /app/node_modules/postgres ./node_modules/postgres
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 CMD ["sh", "-c", "node scripts/migrate-startup.mjs && node server.js"]
