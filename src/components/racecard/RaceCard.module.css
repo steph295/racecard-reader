@@ -1,0 +1,237 @@
+.divider {
+  position: absolute;
+  top: 54px;
+  bottom: 0;
+  width: 11px;
+  margin-left: -5px;
+  cursor: col-resize;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  background: transparent;
+}
+
+.dividerEnd {
+  margin-left: -11px;
+  justify-content: flex-end;
+}
+
+.dividerActive {
+  background: rgba(42, 111, 219, 0.1);
+}
+
+.divider:hover {
+  background: rgba(42, 111, 219, 0.12);
+}
+
+.dividerLine {
+  width: 2px;
+  height: 100%;
+  background: #d0d0d0;
+}
+
+.cardHeader {
+  padding: 12px 16px;
+  border-bottom: 1px solid #ececec;
+  background: #fafafa;
+}
+
+.cardHeaderTitle {
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+.cardHeaderMeta {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.headRow {
+  display: flex;
+  padding: 8px 8px 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.headCommentsCell {
+  padding-left: 14px;
+  border-left: 1px solid #ececec;
+}
+
+.headNotesCell {
+  padding-left: 14px;
+  border-left: 1px solid #ececec;
+}
+
+.row {
+  display: flex;
+  border-bottom: 1px solid #ececec;
+}
+
+.rowNonRunner {
+  background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.05) 0 2px, transparent 2px 14px);
+}
+
+.silkCell {
+  padding: 12px 6px 12px 8px;
+  box-sizing: border-box;
+}
+
+.silkImage {
+  width: 100%;
+  max-width: 56px;
+  aspect-ratio: 1;
+  border-radius: 9px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.noCell {
+  padding: 12px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.noNumber {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.noDraw {
+  font-size: 10.5px;
+  color: #888;
+}
+
+.noForm {
+  font-size: 10.5px;
+  color: #888;
+  font-family: ui-monospace, monospace;
+  margin-top: 2px;
+}
+
+.noOr {
+  font-size: 10.5px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.horseCell {
+  padding: 12px 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.horseName {
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.horseBreeding {
+  font-size: 11px;
+  color: #888;
+  margin-top: 3px;
+}
+
+.horseAgeWeight {
+  font-size: 11px;
+  color: #888;
+}
+
+.horseSubnote {
+  font-size: 10.5px;
+  color: #a08;
+  margin-top: 3px;
+  font-style: italic;
+  white-space: normal;
+}
+
+.jtCell {
+  padding: 12px 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.jtJockey {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.jtTrainer {
+  font-size: 11px;
+  color: #888;
+  margin-top: 3px;
+}
+
+.jtOwner {
+  font-size: 10.5px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+.commentsCell {
+  padding: 12px 14px 12px 20px;
+  box-sizing: border-box;
+  border-left: 1px solid #ececec;
+}
+
+.timeline {
+  border-left: 2px solid #e2e2e2;
+  padding-left: 14px;
+}
+
+.timelineRow {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.timelineDot {
+  position: absolute;
+  left: -19px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1a1a1a;
+}
+
+.timelineDate {
+  font-weight: 700;
+  font-size: 11.5px;
+  color: #1a1a1a;
+}
+
+.timelineDetail {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #333;
+  margin-top: 2px;
+}
+
+.timelineCat {
+  font-weight: 600;
+}
+
+.timelineTag {
+  font-size: 10px;
+  color: #999;
+}
+
+.noReports {
+  font-size: 12px;
+  color: #bbb;
+  font-style: italic;
+}
+
+.noMatches {
+  padding: 32px;
+  text-align: center;
+  font-size: 13px;
+  color: #999;
+}

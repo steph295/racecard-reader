@@ -1,0 +1,88 @@
+.nav {
+  width: 270px;
+  flex: 0 0 270px;
+  border-right: 1px solid #ececec;
+  padding: 22px 14px;
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 0 8px;
+}
+
+.backLink {
+  cursor: pointer;
+  color: #555;
+  font-weight: 600;
+  font-size: 13px;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.backLink:hover {
+  color: #1a1a1a;
+}
+
+.printButton {
+  padding: 7px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid #1a1a1a;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.printButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #999;
+  text-transform: uppercase;
+  margin: 0 8px 10px;
+}
+
+.raceItem {
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  background: transparent;
+  color: #1a1a1a;
+}
+
+.raceItemActive {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.raceItemTitle {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.raceItemMeta {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.raceItemActive .raceItemMeta {
+  color: #cfcfcf;
+}

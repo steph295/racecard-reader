@@ -1,0 +1,179 @@
+.page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 56px 40px 80px;
+}
+
+.header {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #8a8a8a;
+  margin: 0;
+}
+
+.userButton {
+  flex: none;
+  padding-top: 4px;
+}
+
+.dropzone {
+  border: 2px dashed #d6d6d6;
+  border-radius: 12px;
+  padding: 56px 24px;
+  text-align: center;
+  cursor: pointer;
+  background: #fafafa;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.dropzone:hover,
+.dropzoneActive {
+  border-color: #1a1a1a;
+  background: #f5f5f5;
+}
+
+.iconCircle {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 2px solid #bbb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  font-size: 20px;
+  color: #999;
+  line-height: 1;
+}
+
+.dropzoneTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 5px;
+}
+
+.dropzoneSubtitle {
+  font-size: 12px;
+  color: #999;
+}
+
+.demoLink {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: #2a6fdb;
+  cursor: pointer;
+  font-weight: 600;
+  background: none;
+  border: none;
+  width: 100%;
+  padding: 0;
+}
+
+.demoLink:hover {
+  color: #1d55ac;
+}
+
+.errorBanner {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #c0392b;
+  font-size: 12.5px;
+}
+
+.recentSection {
+  margin-top: 40px;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: #999;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.uploadRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.uploadRow:hover {
+  border-color: #c7c7c7;
+  background: #fafafa;
+}
+
+.uploadRowDisabled {
+  cursor: default;
+}
+
+.uploadRowDisabled:hover {
+  border-color: #ececec;
+  background: transparent;
+}
+
+.uploadName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.uploadMeta {
+  font-size: 11.5px;
+  color: #999;
+  margin-top: 3px;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #fdecea;
+  color: #c0392b;
+  white-space: nowrap;
+  flex: none;
+}
+
+.badgeProcessing {
+  background: #eef3fc;
+  color: #2a6fdb;
+}
+
+.badgeFailed {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.emptyState {
+  font-size: 13px;
+  color: #999;
+  padding: 8px 2px;
+}

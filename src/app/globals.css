@@ -1,0 +1,110 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #1a1a1a;
+}
+
+a {
+  color: #2a6fdb;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #1d55ac;
+}
+
+button {
+  font-family: inherit;
+}
+
+@page {
+  size: portrait;
+  margin: 12mm;
+}
+
+/* ---- Racecard table chrome: shared globally (not CSS-modules-scoped)
+   because the print-zoom hook and the print stylesheet both need to target
+   these by their literal class name. ---- */
+
+.rc-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* On-screen truncation for narrow columns; lifted at print time below so
+   nothing is ever cut off on paper (see the non-negotiable print rule). */
+.rc-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media print {
+  .rc-noprint {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .rc-shell {
+    padding: 0 !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  .rc-card {
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible !important;
+    zoom: 1; /* overridden per-render by the injected #rc-print-zoom style */
+  }
+
+  .rc-card .rc-grow-cell {
+    flex-grow: 1 !important;
+    min-width: 0 !important;
+  }
+
+  /* The non-negotiable bit: never truncate text on paper, no matter how
+     narrow the on-screen column widths were configured. */
+  .rc-card .rc-truncate {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+  }
+
+  .rc-notes-cell textarea {
+    min-height: 100px !important;
+    border: 1px solid #bbb !important;
+    resize: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .rc-notes-cell textarea::placeholder {
+    color: transparent !important;
+  }
+}

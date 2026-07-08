@@ -1,0 +1,19 @@
+# Local development convenience: a throwaway Postgres you can point
+# DATABASE_URL at while running `npm run dev` on the host.
+# (The app itself isn't included here - run it with `npm run dev` so you
+# get hot reload; use the Dockerfile only for building a deployable image.)
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: racecard_reader
+    ports:
+      - "5432:5432"
+    volumes:
+      - racecard_reader_pgdata:/var/lib/postgresql/data
+
+volumes:
+  racecard_reader_pgdata:
