@@ -76,9 +76,15 @@ export function RaceCard({
     return list;
   }, [race.runners, search, onlyWithComments]);
 
-  const commentsCellStyle = visibility.notes
-    ? { flex: `0 0 ${colWidths.comments}px`, minWidth: 0 }
-    : { flex: `1 1 ${colWidths.comments}px`, minWidth: colWidths.comments };
+  // The last visible column absorbs leftover width; earlier ones stay fixed.
+  const commentsIsLast = !visibility.privileges && !visibility.notes;
+  const commentsCellStyle = commentsIsLast
+    ? { flex: `1 1 ${colWidths.comments}px`, minWidth: colWidths.comments }
+    : { flex: `0 0 ${colWidths.comments}px`, minWidth: 0 };
+  const privilegesIsLast = !visibility.notes;
+  const privilegesCellStyle = privilegesIsLast
+    ? { flex: `1 1 ${colWidths.privileges}px`, minWidth: colWidths.privileges }
+    : { width: colWidths.privileges, flex: `0 0 ${colWidths.privileges}px`, minWidth: COLUMN_MIN_WIDTHS.privileges };
 
   return (
     <div
@@ -113,6 +119,11 @@ export function RaceCard({
         <div className={`rc-grow-cell ${styles.headCommentsCell}`} style={commentsCellStyle}>
           Comments
         </div>
+        {visibility.privileges && (
+          <div className={`rc-grow-cell ${styles.headPrivilegesCell}`} style={privilegesCellStyle}>
+            Privileges
+          </div>
+        )}
         {visibility.notes && (
           <div
             className={`rc-grow-cell ${styles.headNotesCell}`}
@@ -196,6 +207,16 @@ export function RaceCard({
                 <div className={styles.noReports}>—</div>
               )}
             </div>
+
+            {visibility.privileges && (
+              <div className={`rc-grow-cell ${styles.privilegesCell}`} style={privilegesCellStyle}>
+                {horse.privileges ? (
+                  <div className={styles.privilegesText}>{horse.privileges}</div>
+                ) : (
+                  <div className={styles.noReports}>—</div>
+                )}
+              </div>
+            )}
 
             {visibility.notes && (
               <NotesCell

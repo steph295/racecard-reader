@@ -225,6 +225,7 @@ export async function getMeetingDetail(
         subnote: runner.subnote,
         silkAssetKey: runner.silkAssetKey,
         silkImage: runner.silkImage,
+        privileges: runner.privileges,
         noteBody: runner.notes[0]?.body ?? "",
         reports: runner.reports.map((report) => ({
           id: report.id,
@@ -272,6 +273,60 @@ export async function deleteMeeting(ownerId: string, meetingId: string): Promise
     .where(and(eq(schema.meetings.id, meetingId), eq(schema.meetings.ownerId, ownerId)))
     .returning({ id: schema.meetings.id });
   return result.length > 0;
+}
+
+/**
+ * Applies stall/loading privileges (from an uploaded ORC sheet) to a
+ * meeting's runners, matched by normalized horse name. Names are compared
+ * case-insensitively with country suffixes like "(GB)"/"(IRE)" stripped.
+ * Returns how many runners were matched and which sheet horses weren't found.
+ */
+export async function applyPrivileges(
+  ownerId: string,
+  meetingId: string,
+  entries: { horseName: string; privileges: string }[]
+): Promise<{ matched: number; unmatched: string[] } | null> {
+  const meeting = await db.query.meetings.findFirst({
+    where: and(eq(schema.meetings.id, meetingId), eq(schema.meetings.ownerId, ownerId)),
+    columns: { id: true },
+  });
+  if (!meeting) return null;
+
+  const raceRows = await db.query.races.findMany({
+    where: eq(schema.races.meetingId, meetingId),
+    columns: {},
+    with: { runners: { columns: { id: true, name: true } } },
+  });
+
+  const normalize = (name: string) =>
+    name.toLowerCase().replace(/\s*\([a-z]{2,3}\)\s*$/i, "").replace(/[^a-z0-9]+/g, " ").trim();
+
+  const runnersByName = new Map<string, string[]>();
+  for (const race of raceRows) {
+    for (const runner of race.runners) {
+      const key = normalize(runner.name);
+      runnersByName.set(key, [...(runnersByName.get(key) ?? []), runner.id]);
+    }
+  }
+
+  let matched = 0;
+  const unmatched: string[] = [];
+  for (const entry of entries) {
+    const ids = runnersByName.get(normalize(entry.horseName));
+    if (!ids || ids.length === 0) {
+      unmatched.push(entry.horseName);
+      continue;
+    }
+    for (const id of ids) {
+      await db
+        .update(schema.runners)
+        .set({ privileges: entry.privileges })
+        .where(eq(schema.runners.id, id));
+      matched++;
+    }
+  }
+
+  return { matched, unmatched };
 }
 
 export async function upsertNote(userId: string, runnerId: string, body: string) {

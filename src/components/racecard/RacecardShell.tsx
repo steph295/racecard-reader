@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMeeting, useSaveNote } from "@/lib/hooks/useMeetings";
+import { useMeeting, useSaveNote, useUploadPrivileges } from "@/lib/hooks/useMeetings";
 import { useColumnResize } from "@/lib/hooks/useColumnResize";
 import { usePrintZoom } from "@/lib/hooks/usePrintZoom";
 import { Sidebar } from "./Sidebar";
@@ -63,12 +63,15 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   const router = useRouter();
   const { data: meeting, isLoading, error } = useMeeting(meetingId);
   const saveNote = useSaveNote(meetingId);
+  const uploadPrivileges = useUploadPrivileges(meetingId);
+  const privilegesInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
   const [onlyWithComments, setOnlyWithComments] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [printAll, setPrintAll] = useState(false);
   const [printUnsupported, setPrintUnsupported] = useState(false);
+  const [privilegesNotice, setPrivilegesNotice] = useState<string | null>(null);
 
   // Match the prototype: switching races clears the in-progress search.
   // Adjusting state during render (rather than in an effect) avoids an
@@ -102,6 +105,27 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   const handleSaveNote = useCallback(
     (runnerId: string, body: string) => saveNote.mutate({ runnerId, body }),
     [saveNote]
+  );
+
+  const handlePrivilegesFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = ""; // allow re-uploading the same file
+      if (!file) return;
+      uploadPrivileges.mutate(file, {
+        onSuccess: (result) => {
+          const parts = [`Privileges added for ${result.matched} runner${result.matched === 1 ? "" : "s"}.`];
+          if (result.unmatched.length > 0) {
+            parts.push(`Not on this card: ${result.unmatched.join(", ")}.`);
+          }
+          setPrivilegesNotice(parts.join(" "));
+        },
+        onError: (err) => {
+          setPrivilegesNotice(err instanceof Error ? err.message : "Couldn't read that sheet.");
+        },
+      });
+    },
+    [uploadPrivileges]
   );
 
   if (isLoading) {
@@ -187,7 +211,30 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
             onToggleColumn={toggleColumn}
             onResetColumns={resetColumns}
           />
+          <input
+            ref={privilegesInputRef}
+            type="file"
+            accept=".xls,.xlsx,.html,.htm"
+            style={{ display: "none" }}
+            onChange={handlePrivilegesFile}
+          />
+          <button
+            className={styles.privilegesUploadBtn}
+            onClick={() => privilegesInputRef.current?.click()}
+            disabled={uploadPrivileges.isPending}
+          >
+            {uploadPrivileges.isPending ? "Reading sheet…" : "⇪ Upload privileges sheet"}
+          </button>
         </div>
+
+        {privilegesNotice && (
+          <div className={`rc-noprint ${styles.printNotice}`}>
+            <span>{privilegesNotice}</span>
+            <button className={styles.printNoticeClose} onClick={() => setPrivilegesNotice(null)}>
+              ✕
+            </button>
+          </div>
+        )}
 
         {racesToRender.map((race, i) => (
           <RaceCard

@@ -50,7 +50,7 @@ export interface RawRace {
 
 // ---- column configuration (upload-screen-independent UI state) ----
 
-export const COLUMN_ORDER = ["no", "horse", "jt", "comments", "notes"] as const;
+export const COLUMN_ORDER = ["no", "horse", "jt", "comments", "privileges", "notes"] as const;
 export type ColumnKey = (typeof COLUMN_ORDER)[number];
 
 export interface ColumnWidths {
@@ -58,6 +58,7 @@ export interface ColumnWidths {
   horse: number;
   jt: number;
   comments: number;
+  privileges: number;
   notes: number;
 }
 
@@ -66,6 +67,7 @@ export const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
   horse: 210,
   jt: 150,
   comments: 280,
+  privileges: 170,
   notes: 150,
 };
 
@@ -74,6 +76,7 @@ export const COLUMN_MIN_WIDTHS: ColumnWidths = {
   horse: 140,
   jt: 110,
   comments: 200,
+  privileges: 110,
   notes: 100,
 };
 
@@ -84,6 +87,7 @@ export interface ColumnVisibility {
   no: boolean;
   horse: boolean;
   jt: boolean;
+  privileges: boolean;
   notes: boolean;
   // "comments" is always visible - it's the core value prop of the app.
 }
@@ -93,6 +97,7 @@ export const DEFAULT_COLUMN_VISIBILITY: ColumnVisibility = {
   no: true,
   horse: true,
   jt: true,
+  privileges: true,
   notes: true,
 };
 
@@ -131,6 +136,7 @@ export interface RunnerDTO {
   subnote: string | null;
   silkAssetKey: string | null;
   silkImage: string | null;
+  privileges: string | null;
   reports: ReportDTO[];
   noteBody: string;
 }

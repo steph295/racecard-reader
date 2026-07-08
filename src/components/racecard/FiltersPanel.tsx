@@ -90,6 +90,9 @@ export function FiltersPanel({
                 <button className={chipClass(visibility.jt)} onClick={() => onToggleColumn("jt")}>
                   Jockey / Trainer
                 </button>
+                <button className={chipClass(visibility.privileges)} onClick={() => onToggleColumn("privileges")}>
+                  Privileges
+                </button>
                 <button className={chipClass(visibility.notes)} onClick={() => onToggleColumn("notes")}>
                   My Notes
                 </button>

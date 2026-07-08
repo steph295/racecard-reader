@@ -221,6 +221,26 @@
   color: #999;
 }
 
+.headPrivilegesCell {
+  padding-left: 14px;
+  border-left: 1px solid #ececec;
+  box-sizing: border-box;
+}
+
+.privilegesCell {
+  padding: 12px 10px 12px 14px;
+  box-sizing: border-box;
+  border-left: 1px solid #ececec;
+  overflow: hidden;
+}
+
+.privilegesText {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #333;
+  white-space: normal;
+}
+
 .noReports {
   font-size: 12px;
   color: #bbb;

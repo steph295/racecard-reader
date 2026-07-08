@@ -88,6 +88,8 @@ export const runners = pgTable("runners", {
   silkAssetKey: text("silk_asset_key"),
   // Silk artwork extracted from the uploaded PDF, stored as a PNG data URI.
   silkImage: text("silk_image"),
+  // Stall/loading privileges from an uploaded ORC sheet, e.g. "RH, FED — Blind to load".
+  privileges: text("privileges"),
 }, (t) => ({
   raceIdx: index("runners_race_idx").on(t.raceId),
   raceNoIdx: uniqueIndex("runners_race_no_idx").on(t.raceId, t.no),

@@ -77,6 +77,27 @@ export function useDeleteMeeting() {
   });
 }
 
+export interface PrivilegesUploadResult {
+  matched: number;
+  totalInSheet: number;
+  unmatched: string[];
+}
+
+export function useUploadPrivileges(meetingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return fetchJson<PrivilegesUploadResult>(`/api/meetings/${meetingId}/privileges`, {
+        method: "POST",
+        body: formData,
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: meetingKey(meetingId) }),
+  });
+}
+
 export function useSaveNote(meetingId: string) {
   const queryClient = useQueryClient();
   return useMutation({
