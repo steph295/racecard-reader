@@ -84,9 +84,14 @@ export async function extractSilksFromPdf(bytes: Uint8Array): Promise<string[]> 
   pdfjs.GlobalWorkerOptions.workerSrc = "pdfjs-dist/legacy/build/pdf.worker.mjs";
 
   const doc = await pdfjs.getDocument({
-    data: bytes,
+    // pdfjs *transfers* (detaches) the underlying ArrayBuffer to its worker,
+    // so it must get a private copy - the caller's bytes are typically shared
+    // with the text-extraction pass, which has already detached its buffer.
+    data: bytes.slice(),
     useWorkerFetch: false,
     disableFontFace: true,
+    isOffscreenCanvasSupported: false,
+    isImageDecoderSupported: false,
   }).promise;
   const OPS = pdfjs.OPS;
 

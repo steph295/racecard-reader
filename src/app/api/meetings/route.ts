@@ -59,6 +59,10 @@ async function processUpload(
   fileName: string
 ) {
   try {
+    // pdfjs transfers (detaches) the buffer it's given, so the text and silk
+    // passes each need their own copy of the PDF bytes.
+    const silkBytes = kind === "pdf" ? bytes.slice() : null;
+
     const rawText =
       kind === "pdf"
         ? await extractTextFromPdf(bytes)
@@ -77,9 +81,9 @@ async function processUpload(
     // Silk artwork is embedded as images in the PDF, one per runner in
     // saddlecloth order. Extraction is best-effort: if counts don't line up
     // we skip attaching rather than risk showing the wrong colours.
-    if (kind === "pdf") {
+    if (kind === "pdf" && silkBytes) {
       try {
-        const silks = await extractSilksFromPdf(bytes);
+        const silks = await extractSilksFromPdf(silkBytes);
         const allRunners = extraction.races.flatMap((race) => race.runners);
         if (silks.length === allRunners.length) {
           allRunners.forEach((runner, i) => {
