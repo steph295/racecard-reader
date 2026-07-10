@@ -8,7 +8,7 @@ import { usePrintZoom } from "@/lib/hooks/usePrintZoom";
 import { Sidebar } from "./Sidebar";
 import { FiltersPanel } from "./FiltersPanel";
 import { RaceCard } from "./RaceCard";
-import { RaceTabs } from "./RaceTabs";
+import { PrintRaceTabs } from "./PrintRaceTabs";
 import styles from "./RacecardShell.module.css";
 
 // Typical full-meeting parse takes 30–120s. We simulate a progress bar that
@@ -84,16 +84,10 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
     setSearch("");
   }
 
-  // Deep in a 20-runner field, tapping another race tab must land at the top
-  // of that race immediately - no smooth scroll, the steward is mid-broadcast.
+  // Switching races lands at the top of the new race immediately.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [raceNumber]);
-
-  const handleSelectRace = useCallback(
-    (n: number) => router.push(`/meetings/${meetingId}/races/${n}`),
-    [router, meetingId]
-  );
 
   const { colWidths, visibility, dividers, resetColumns, toggleColumn } = useColumnResize();
   usePrintZoom(colWidths, visibility);
@@ -191,8 +185,6 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
       />
 
       <div className={`rc-shell ${styles.main}`}>
-        <RaceTabs races={meeting.races} activeRaceNumber={currentRace.number} onSelectRace={handleSelectRace} />
-
         {printUnsupported && (
           <div className={`rc-noprint ${styles.printNotice}`}>
             <span>
@@ -253,10 +245,10 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
           </div>
         )}
 
-        <div className={styles.cardsScroller}>
-          {racesToRender.map((race, i) => (
+        {racesToRender.map((race, i) => (
+          <div key={race.id} id={`race-${race.number}`}>
+            <PrintRaceTabs races={meeting.races} activeRaceNumber={race.number} />
             <RaceCard
-              key={race.id}
               race={race}
               colWidths={colWidths}
               visibility={visibility}
@@ -267,8 +259,8 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
               onSaveNote={handleSaveNote}
               pageBreakAfter={i < racesToRender.length - 1}
             />
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );

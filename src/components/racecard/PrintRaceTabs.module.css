@@ -1,0 +1,51 @@
+/* Only exists on the printed page / saved PDF. */
+.strip {
+  display: none;
+}
+
+@media print {
+  .strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+    break-inside: avoid;
+  }
+}
+
+.tab {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  background: #fafafa;
+  color: #1a1a1a;
+  text-decoration: none;
+  white-space: nowrap;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.tabActive {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+  color: #fff;
+}
+
+.tabRace {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tabTime {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #888;
+}
+
+.tabActive .tabTime {
+  color: rgba(255, 255, 255, 0.75);
+}
