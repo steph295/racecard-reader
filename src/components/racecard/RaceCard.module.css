@@ -221,24 +221,29 @@
   color: #999;
 }
 
-.headPrivilegesCell {
-  padding-left: 14px;
-  border-left: 1px solid #ececec;
-  box-sizing: border-box;
+.privTagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 3px;
 }
 
-.privilegesCell {
-  padding: 12px 10px 12px 14px;
-  box-sizing: border-box;
-  border-left: 1px solid #ececec;
-  overflow: hidden;
-}
-
-.privilegesText {
-  font-size: 12px;
-  line-height: 1.45;
-  color: #333;
-  white-space: normal;
+.privTag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 3px;
+  background: #fdf3d7;
+  color: #7a5c10;
+  border: 1px solid #f0e2b6;
+  white-space: nowrap;
+  break-inside: avoid;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .noReports {

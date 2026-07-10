@@ -9,12 +9,19 @@ interface FiltersPanelProps {
   onClose: () => void;
   search: string;
   onSearchChange: (value: string) => void;
-  onlyWithComments: boolean;
-  onToggleOnlyWithComments: () => void;
+  commentLimit: number | null;
+  onChangeCommentLimit: (limit: number | null) => void;
   visibility: ColumnVisibility;
   onToggleColumn: (key: keyof ColumnVisibility) => void;
   onResetColumns: () => void;
 }
+
+const COMMENT_LIMIT_OPTIONS: { label: string; value: number | null }[] = [
+  { label: "Last run", value: 1 },
+  { label: "Last 3 runs", value: 3 },
+  { label: "Last 6 runs", value: 6 },
+  { label: "All", value: null },
+];
 
 function chipClass(active: boolean) {
   return `${styles.chip} ${active ? styles.chipActive : ""}`;
@@ -26,8 +33,8 @@ export function FiltersPanel({
   onClose,
   search,
   onSearchChange,
-  onlyWithComments,
-  onToggleOnlyWithComments,
+  commentLimit,
+  onChangeCommentLimit,
   visibility,
   onToggleColumn,
   onResetColumns,
@@ -84,12 +91,32 @@ export function FiltersPanel({
                 <button className={chipClass(visibility.comments)} onClick={() => onToggleColumn("comments")}>
                   Comments
                 </button>
-                <button className={chipClass(visibility.privileges)} onClick={() => onToggleColumn("privileges")}>
-                  Privileges
-                </button>
                 <button className={chipClass(visibility.notes)} onClick={() => onToggleColumn("notes")}>
                   My Notes
                 </button>
+              </div>
+            </div>
+
+            <div className={styles.group}>
+              <div className={styles.sectionLabel}>Runs since comment</div>
+              <div className={styles.radioList}>
+                {COMMENT_LIMIT_OPTIONS.map((opt) => {
+                  const selected = commentLimit === opt.value;
+                  return (
+                    <label
+                      key={opt.label}
+                      className={`${styles.radioRow} ${selected ? styles.radioRowSelected : ""}`}
+                    >
+                      <input
+                        type="radio"
+                        name="comment-limit"
+                        checked={selected}
+                        onChange={() => onChangeCommentLimit(opt.value)}
+                      />
+                      {opt.label}
+                    </label>
+                  );
+                })}
               </div>
             </div>
 

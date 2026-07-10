@@ -50,7 +50,7 @@ export interface RawRace {
 
 // ---- column configuration (upload-screen-independent UI state) ----
 
-export const COLUMN_ORDER = ["no", "horse", "jt", "comments", "privileges", "notes"] as const;
+export const COLUMN_ORDER = ["no", "horse", "jt", "comments", "notes"] as const;
 export type ColumnKey = (typeof COLUMN_ORDER)[number];
 
 export interface ColumnWidths {
@@ -58,7 +58,6 @@ export interface ColumnWidths {
   horse: number;
   jt: number;
   comments: number;
-  privileges: number;
   notes: number;
 }
 
@@ -67,7 +66,6 @@ export const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
   horse: 210,
   jt: 150,
   comments: 280,
-  privileges: 170,
   notes: 150,
 };
 
@@ -76,7 +74,6 @@ export const COLUMN_MIN_WIDTHS: ColumnWidths = {
   horse: 140,
   jt: 110,
   comments: 200,
-  privileges: 110,
   notes: 100,
 };
 
@@ -88,7 +85,6 @@ export interface ColumnVisibility {
   horse: boolean;
   jt: boolean;
   comments: boolean;
-  privileges: boolean;
   notes: boolean;
 }
 
@@ -98,7 +94,6 @@ export const DEFAULT_COLUMN_VISIBILITY: ColumnVisibility = {
   horse: true,
   jt: true,
   comments: true,
-  privileges: true,
   notes: true,
 };
 

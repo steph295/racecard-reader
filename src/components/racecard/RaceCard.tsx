@@ -5,6 +5,7 @@ import type { RaceDTO, RunnerDTO } from "@/lib/types";
 import { COLUMN_MIN_WIDTHS, SILK_COLUMN_WIDTH, type ColumnVisibility, type ColumnWidths } from "@/lib/types";
 import type { Divider } from "@/lib/hooks/useColumnResize";
 import { getSilkUrl } from "@/lib/silks";
+import { privilegesToTags } from "@/lib/privilegeTags";
 import { NotesCell } from "./NotesCell";
 import styles from "./RaceCard.module.css";
 
@@ -19,9 +20,36 @@ interface FlatReportRow {
   detail: string;
 }
 
-function flattenReports(runner: RunnerDTO): FlatReportRow[] {
+/** Best-effort parse of racecard report dates like "21 May", "10 May 07:30", "21/05/25". */
+function parseReportDate(date: string | null): number | null {
+  if (!date) return null;
+  const trimmed = date.trim();
+  const dmy = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (dmy) {
+    const year = dmy[3].length === 2 ? 2000 + parseInt(dmy[3], 10) : parseInt(dmy[3], 10);
+    return new Date(year, parseInt(dmy[2], 10) - 1, parseInt(dmy[1], 10)).getTime();
+  }
+  const parsed = Date.parse(trimmed);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+/**
+ * Keeps only the `limit` most recent report entries. Printed order varies by
+ * provider (oldest-first or newest-first), so compare the first and last
+ * parseable dates to decide which end holds the recent ones; when dates
+ * can't be parsed, assume oldest-first (the common case) and keep the tail.
+ */
+function limitReports(reports: RunnerDTO["reports"], limit: number | null): RunnerDTO["reports"] {
+  if (limit == null || reports.length <= limit) return reports;
+  const firstDate = parseReportDate(reports[0].date);
+  const lastDate = parseReportDate(reports[reports.length - 1].date);
+  const newestFirst = firstDate != null && lastDate != null && firstDate > lastDate;
+  return newestFirst ? reports.slice(0, limit) : reports.slice(-limit);
+}
+
+function flattenReports(runner: RunnerDTO, commentLimit: number | null): FlatReportRow[] {
   const rows: FlatReportRow[] = [];
-  runner.reports.forEach((report) => {
+  limitReports(runner.reports, commentLimit).forEach((report) => {
     report.items.forEach((item, i) => {
       rows.push({
         key: `${report.id}-${item.id}`,
@@ -44,7 +72,8 @@ interface RaceCardProps {
   visibility: ColumnVisibility;
   dividers: Divider[];
   search: string;
-  onlyWithComments: boolean;
+  /** Show only the N most recent comment entries per horse (null = all). */
+  commentLimit: number | null;
   onSaveNote: (runnerId: string, body: string) => void;
   pageBreakAfter: boolean;
 }
@@ -55,7 +84,7 @@ export function RaceCard({
   visibility,
   dividers,
   search,
-  onlyWithComments,
+  commentLimit,
   onSaveNote,
   pageBreakAfter,
 }: RaceCardProps) {
@@ -70,21 +99,14 @@ export function RaceCard({
           (h.trainer ?? "").toLowerCase().includes(term)
       );
     }
-    if (onlyWithComments) {
-      list = list.filter((h) => h.reports.length > 0);
-    }
     return list;
-  }, [race.runners, search, onlyWithComments]);
+  }, [race.runners, search]);
 
   // The last visible column absorbs leftover width; earlier ones stay fixed.
-  const commentsIsLast = visibility.comments && !visibility.privileges && !visibility.notes;
+  const commentsIsLast = visibility.comments && !visibility.notes;
   const commentsCellStyle = commentsIsLast
     ? { flex: `1 1 ${colWidths.comments}px`, minWidth: colWidths.comments }
     : { flex: `0 0 ${colWidths.comments}px`, minWidth: 0 };
-  const privilegesIsLast = visibility.privileges && !visibility.notes;
-  const privilegesCellStyle = privilegesIsLast
-    ? { flex: `1 1 ${colWidths.privileges}px`, minWidth: colWidths.privileges }
-    : { width: colWidths.privileges, flex: `0 0 ${colWidths.privileges}px`, minWidth: COLUMN_MIN_WIDTHS.privileges };
 
   return (
     <div
@@ -121,11 +143,6 @@ export function RaceCard({
             Comments
           </div>
         )}
-        {visibility.privileges && (
-          <div className={`rc-grow-cell ${styles.headPrivilegesCell}`} style={privilegesCellStyle}>
-            Privileges
-          </div>
-        )}
         {visibility.notes && (
           <div
             className={`rc-grow-cell ${styles.headNotesCell}`}
@@ -137,7 +154,7 @@ export function RaceCard({
       </div>
 
       {runners.map((horse, idx) => {
-        const rows = flattenReports(horse);
+        const rows = flattenReports(horse, commentLimit);
         const hasReports = rows.length > 0;
         return (
           <div key={horse.id} className={`${styles.row} ${horse.nonRunner ? styles.rowNonRunner : ""}`}>
@@ -164,6 +181,18 @@ export function RaceCard({
             {visibility.horse && (
               <div className={styles.horseCell} style={{ width: colWidths.horse, flex: `0 0 ${colWidths.horse}px`, minWidth: COLUMN_MIN_WIDTHS.horse }}>
                 <div className={`${styles.horseName} rc-truncate`}>{horse.name}</div>
+                {(() => {
+                  const tags = privilegesToTags(horse.privileges);
+                  return tags.length > 0 ? (
+                    <div className={styles.privTagRow} title={horse.privileges ?? undefined}>
+                      {tags.map((tag) => (
+                        <span key={tag} className={styles.privTag}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
                 <div className={`${styles.horseBreeding} rc-truncate`}>
                   {horse.sire ?? "—"} — {horse.dam ?? "—"}
                 </div>
@@ -209,16 +238,6 @@ export function RaceCard({
                 <div className={styles.noReports}>—</div>
               )}
             </div>}
-
-            {visibility.privileges && (
-              <div className={`rc-grow-cell ${styles.privilegesCell}`} style={privilegesCellStyle}>
-                {horse.privileges ? (
-                  <div className={styles.privilegesText}>{horse.privileges}</div>
-                ) : (
-                  <div className={styles.noReports}>—</div>
-                )}
-              </div>
-            )}
 
             {visibility.notes && (
               <NotesCell

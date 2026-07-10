@@ -67,7 +67,7 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   const privilegesInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
-  const [onlyWithComments, setOnlyWithComments] = useState(false);
+  const [commentLimit, setCommentLimit] = useState<number | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [printAll, setPrintAll] = useState(false);
   const [printUnsupported, setPrintUnsupported] = useState(false);
@@ -205,8 +205,8 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
             onClose={() => setFiltersOpen(false)}
             search={search}
             onSearchChange={setSearch}
-            onlyWithComments={onlyWithComments}
-            onToggleOnlyWithComments={() => setOnlyWithComments((v) => !v)}
+            commentLimit={commentLimit}
+            onChangeCommentLimit={setCommentLimit}
             visibility={visibility}
             onToggleColumn={toggleColumn}
             onResetColumns={resetColumns}
@@ -244,7 +244,7 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
             visibility={visibility}
             dividers={dividers}
             search={search}
-            onlyWithComments={onlyWithComments}
+            commentLimit={commentLimit}
             onSaveNote={handleSaveNote}
             pageBreakAfter={i < racesToRender.length - 1}
           />

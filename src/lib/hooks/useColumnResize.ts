@@ -41,7 +41,6 @@ export function useColumnResize() {
       horse: visibility.horse,
       jt: visibility.jt,
       comments: visibility.comments,
-      privileges: visibility.privileges,
       notes: visibility.notes,
     };
     return COLUMN_ORDER.filter((k) => show[k]);

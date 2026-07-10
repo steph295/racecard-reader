@@ -13,18 +13,18 @@ export interface PrivilegeEntry {
   privileges: string;
 }
 
-/** Header substring (lowercased) -> abbreviation shown on the racecard. */
+/** Header substring (lowercased) -> steward abbreviation shown on the racecard. */
 const FLAG_ABBREVIATIONS: [string, string][] = [
   ["late load", "LL"],
   ["staff to be at the start", "AS"],
-  ["start early", "ES"],
+  ["start early", "E"],
   ["any plate is shed", "WP"],
   ["foreleg is shed", "WPF"],
   ["red hood", "RH"],
-  ["tongue strap", "TS"],
-  ["ear plugs which should be removed", "EP"],
-  ["ear plugs throughout", "EPR"],
-  ["hood in the parade ring", "HPR"],
+  ["tongue strap", "WITS"],
+  ["ear plugs which should be removed", "Ear out"],
+  ["ear plugs throughout", "Ear in"],
+  ["hood in the parade ring", "HP"],
   ["mounted in the chute", "MC"],
   ["fed while stabled", "FED"],
 ];
