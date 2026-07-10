@@ -8,6 +8,7 @@ import { usePrintZoom } from "@/lib/hooks/usePrintZoom";
 import { Sidebar } from "./Sidebar";
 import { FiltersPanel } from "./FiltersPanel";
 import { RaceCard } from "./RaceCard";
+import { RaceTabs } from "./RaceTabs";
 import styles from "./RacecardShell.module.css";
 
 // Typical full-meeting parse takes 30–120s. We simulate a progress bar that
@@ -81,6 +82,17 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
     setLastRaceNumber(raceNumber);
     setSearch("");
   }
+
+  // Deep in a 20-runner field, tapping another race tab must land at the top
+  // of that race immediately - no smooth scroll, the steward is mid-broadcast.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [raceNumber]);
+
+  const handleSelectRace = useCallback(
+    (n: number) => router.push(`/meetings/${meetingId}/races/${n}`),
+    [router, meetingId]
+  );
 
   const { colWidths, visibility, dividers, resetColumns, toggleColumn } = useColumnResize();
   usePrintZoom(colWidths, visibility);
@@ -178,6 +190,8 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
       />
 
       <div className={`rc-shell ${styles.main}`}>
+        <RaceTabs races={meeting.races} activeRaceNumber={currentRace.number} onSelectRace={handleSelectRace} />
+
         {printUnsupported && (
           <div className={`rc-noprint ${styles.printNotice}`}>
             <span>
@@ -236,19 +250,21 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
           </div>
         )}
 
-        {racesToRender.map((race, i) => (
-          <RaceCard
-            key={race.id}
-            race={race}
-            colWidths={colWidths}
-            visibility={visibility}
-            dividers={dividers}
-            search={search}
-            commentLimit={commentLimit}
-            onSaveNote={handleSaveNote}
-            pageBreakAfter={i < racesToRender.length - 1}
-          />
-        ))}
+        <div className={styles.cardsScroller}>
+          {racesToRender.map((race, i) => (
+            <RaceCard
+              key={race.id}
+              race={race}
+              colWidths={colWidths}
+              visibility={visibility}
+              dividers={dividers}
+              search={search}
+              commentLimit={commentLimit}
+              onSaveNote={handleSaveNote}
+              pageBreakAfter={i < racesToRender.length - 1}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

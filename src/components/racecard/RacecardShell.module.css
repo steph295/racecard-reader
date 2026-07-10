@@ -5,12 +5,24 @@
   background: #fff;
 }
 
+/* No overflow on .main itself - it would become the containing scrollport for
+   the sticky race tabs and stop them pinning to the viewport. Wide tables
+   scroll inside .cardsScroller instead. */
 .main {
   flex: 1;
   min-width: 0;
   padding: 28px 40px 70px;
   box-sizing: border-box;
+}
+
+.cardsScroller {
   overflow-x: auto;
+}
+
+@media print {
+  .cardsScroller {
+    overflow: visible !important;
+  }
 }
 
 .toolbar {

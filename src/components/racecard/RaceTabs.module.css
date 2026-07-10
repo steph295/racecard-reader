@@ -1,0 +1,67 @@
+/* Spans the main column edge-to-edge (cancelling the shell's padding) and
+   sticks to the viewport top while the runner list scrolls underneath. */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin: -28px -40px 18px;
+  padding: 8px 40px;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  /* Comfortable thumb target on iPad without a tall bar */
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #1a1a1a;
+  cursor: pointer;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+.tab:hover {
+  border-color: #1a1a1a;
+}
+
+.tabActive {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+  color: #fff;
+}
+
+.tabRace {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tabTime {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #777;
+}
+
+.tabActive .tabTime {
+  color: rgba(255, 255, 255, 0.75);
+}
