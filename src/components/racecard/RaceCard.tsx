@@ -77,11 +77,11 @@ export function RaceCard({
   }, [race.runners, search, onlyWithComments]);
 
   // The last visible column absorbs leftover width; earlier ones stay fixed.
-  const commentsIsLast = !visibility.privileges && !visibility.notes;
+  const commentsIsLast = visibility.comments && !visibility.privileges && !visibility.notes;
   const commentsCellStyle = commentsIsLast
     ? { flex: `1 1 ${colWidths.comments}px`, minWidth: colWidths.comments }
     : { flex: `0 0 ${colWidths.comments}px`, minWidth: 0 };
-  const privilegesIsLast = !visibility.notes;
+  const privilegesIsLast = visibility.privileges && !visibility.notes;
   const privilegesCellStyle = privilegesIsLast
     ? { flex: `1 1 ${colWidths.privileges}px`, minWidth: colWidths.privileges }
     : { width: colWidths.privileges, flex: `0 0 ${colWidths.privileges}px`, minWidth: COLUMN_MIN_WIDTHS.privileges };
@@ -116,9 +116,11 @@ export function RaceCard({
         {visibility.no && <div style={{ width: colWidths.no, flex: `0 0 ${colWidths.no}px` }}>No</div>}
         {visibility.horse && <div style={{ width: colWidths.horse, flex: `0 0 ${colWidths.horse}px` }}>Horse</div>}
         {visibility.jt && <div style={{ width: colWidths.jt, flex: `0 0 ${colWidths.jt}px` }}>Jockey / Trainer</div>}
-        <div className={`rc-grow-cell ${styles.headCommentsCell}`} style={commentsCellStyle}>
-          Comments
-        </div>
+        {visibility.comments && (
+          <div className={`rc-grow-cell ${styles.headCommentsCell}`} style={commentsCellStyle}>
+            Comments
+          </div>
+        )}
         {visibility.privileges && (
           <div className={`rc-grow-cell ${styles.headPrivilegesCell}`} style={privilegesCellStyle}>
             Privileges
@@ -180,7 +182,7 @@ export function RaceCard({
               </div>
             )}
 
-            <div className={`rc-grow-cell ${styles.commentsCell}`} style={commentsCellStyle}>
+            {visibility.comments && <div className={`rc-grow-cell ${styles.commentsCell}`} style={commentsCellStyle}>
               {hasReports ? (
                 <div className={styles.timeline}>
                   {rows.map((row) => (
@@ -206,7 +208,7 @@ export function RaceCard({
               ) : (
                 <div className={styles.noReports}>—</div>
               )}
-            </div>
+            </div>}
 
             {visibility.privileges && (
               <div className={`rc-grow-cell ${styles.privilegesCell}`} style={privilegesCellStyle}>

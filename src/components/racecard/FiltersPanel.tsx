@@ -67,15 +67,6 @@ export function FiltersPanel({
             />
 
             <div className={styles.group}>
-              <div className={styles.sectionLabel}>Comments</div>
-              <div className={styles.chipRow}>
-                <button className={chipClass(onlyWithComments)} onClick={onToggleOnlyWithComments}>
-                  With reports only
-                </button>
-              </div>
-            </div>
-
-            <div className={styles.group}>
               <div className={styles.sectionLabel}>Show columns</div>
               <div className={styles.chipRow}>
                 <button className={chipClass(visibility.silk)} onClick={() => onToggleColumn("silk")}>
@@ -89,6 +80,9 @@ export function FiltersPanel({
                 </button>
                 <button className={chipClass(visibility.jt)} onClick={() => onToggleColumn("jt")}>
                   Jockey / Trainer
+                </button>
+                <button className={chipClass(visibility.comments)} onClick={() => onToggleColumn("comments")}>
+                  Comments
                 </button>
                 <button className={chipClass(visibility.privileges)} onClick={() => onToggleColumn("privileges")}>
                   Privileges

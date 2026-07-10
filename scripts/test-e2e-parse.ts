@@ -12,17 +12,25 @@ async function main() {
   const text = await extractTextFromPdf(bytes);
   console.log("text length:", text.length);
 
-  const [extraction, silks] = await Promise.all([
+  const [extraction, silkRaces] = await Promise.all([
     structureRaceMeeting(text),
     extractSilksFromPdf(silkBytes),
   ]);
 
-  const runners = extraction.races.flatMap((r) => r.runners);
-  console.log("races:", extraction.races.length);
-  console.log("runners:", runners.length);
-  console.log("silks:", silks.length);
-  console.log(runners.length === silks.length ? "MATCH - silks will attach" : "MISMATCH - silks would be skipped!");
-  extraction.races.forEach((r, i) => console.log(`  race ${i + 1} (${r.time}): ${r.runners.length} runners`));
+  console.log("races:", extraction.races.length, "| silk groups:", silkRaces.length);
+  let attached = 0;
+  let total = 0;
+  extraction.races.forEach((race, raceIdx) => {
+    const raceSilks = silkRaces[raceIdx] ?? [];
+    const matched = race.runners.filter((r) => raceSilks.some((s) => s.no === r.no)).length;
+    attached += matched;
+    total += race.runners.length;
+    console.log(
+      `  race ${raceIdx + 1} (${race.time}): ${race.runners.length} runners, ` +
+        `${raceSilks.length} silks (nos ${raceSilks.map((s) => s.no).join(",")}), matched ${matched}`
+    );
+  });
+  console.log(`TOTAL matched by saddlecloth number: ${attached}/${total}`);
 }
 
 main().catch((e) => {

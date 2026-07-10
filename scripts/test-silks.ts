@@ -10,14 +10,21 @@ async function main() {
     process.exit(1);
   }
   const bytes = new Uint8Array(readFileSync(pdfPath));
-  const silks = await extractSilksFromPdf(bytes);
-  console.log("Extracted", silks.length, "silk images");
+  const races = await extractSilksFromPdf(bytes);
   mkdirSync(outDir, { recursive: true });
-  silks.forEach((uri, i) => {
-    const b64 = uri.split(",")[1];
-    writeFileSync(`${outDir}/silk-${String(i).padStart(2, "0")}.png`, Buffer.from(b64, "base64"));
+  let total = 0;
+  races.forEach((race, r) => {
+    console.log(`race group ${r + 1}: ${race.length} silks, nos = ${race.map((s) => s.no).join(",")}`);
+    race.forEach((silk) => {
+      const b64 = silk.dataUri.split(",")[1];
+      writeFileSync(
+        `${outDir}/race${r + 1}-no${silk.no ?? "x"}.png`,
+        Buffer.from(b64, "base64")
+      );
+      total++;
+    });
   });
-  console.log("Wrote", silks.length, "PNGs to", outDir);
+  console.log("Wrote", total, "PNGs to", outDir);
 }
 
 main().catch((e) => {

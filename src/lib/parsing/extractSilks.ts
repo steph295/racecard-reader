@@ -2,18 +2,28 @@
  * Extracts jockey-silk artwork from a racecard PDF.
  *
  * Silks in these PDFs are vector drawings (not embedded images): each one is
- * a dense cluster of small paths in a roughly square ~47x47pt box. Strategy:
+ * a dense cluster of small paths in a roughly square ~47x47pt box, with the
+ * runner's saddlecloth number printed just to its left. Strategy:
  *
  *   1. Walk each page's operator list tracking the transform stack, and
  *      cluster small path bounding boxes into silk-sized groups.
- *   2. Render the whole page once to a canvas (@napi-rs/canvas, which pdfjs
- *      uses natively in Node), then crop each cluster out as a PNG.
+ *   2. Read the page's text and pair each silk with the saddlecloth number
+ *      printed beside it.
+ *   3. Render the whole page once to a canvas (@napi-rs/canvas), then crop
+ *      each silk out as a PNG data URI.
  *
- * Returns PNG data URIs in reading order (page, top-to-bottom). Racecards
- * list silks in saddlecloth order, so the Nth silk belongs to the Nth runner.
+ * Silks are grouped into races by detecting saddlecloth-number resets
+ * (each race's numbers restart at 1), so callers can match silk -> runner
+ * by (race index, saddlecloth number) instead of fragile global order.
  */
 
 import { createCanvas } from "@napi-rs/canvas";
+
+export interface SilkEntry {
+  /** Saddlecloth number printed next to the silk (null if none found). */
+  no: number | null;
+  dataUri: string;
+}
 
 type Matrix = [number, number, number, number, number, number];
 
@@ -79,7 +89,11 @@ function clusterSilkBoxes(boxes: Box[]): Cluster[] {
 
 const RENDER_SCALE = 2; // 47pt silk -> ~94px crop, plenty for a 44px display size
 
-export async function extractSilksFromPdf(bytes: Uint8Array): Promise<string[]> {
+/**
+ * Returns silks grouped by race, in card order. Each race group holds the
+ * silks found for that race with their saddlecloth numbers.
+ */
+export async function extractSilksFromPdf(bytes: Uint8Array): Promise<SilkEntry[][]> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   pdfjs.GlobalWorkerOptions.workerSrc = "pdfjs-dist/legacy/build/pdf.worker.mjs";
 
@@ -95,7 +109,7 @@ export async function extractSilksFromPdf(bytes: Uint8Array): Promise<string[]> 
   }).promise;
   const OPS = pdfjs.OPS;
 
-  const silks: string[] = [];
+  const entries: SilkEntry[] = [];
 
   for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
     const page = await doc.getPage(pageNum);
@@ -133,6 +147,20 @@ export async function extractSilksFromPdf(bytes: Uint8Array): Promise<string[]> 
     if (clusters.length === 0) continue;
     clusters.sort((a, b) => a.y1 - b.y1 || a.x1 - b.x1);
 
+    // Saddlecloth numbers are short integers printed to the LEFT of the silk.
+    const textContent = await page.getTextContent();
+    const numberTexts: { no: number; x: number; yTop: number }[] = [];
+    for (const item of textContent.items) {
+      if (!("str" in item) || !("transform" in item)) continue;
+      const str = item.str.trim();
+      if (!/^\d{1,2}$/.test(str)) continue;
+      numberTexts.push({
+        no: parseInt(str, 10),
+        x: item.transform[4],
+        yTop: pageHeight - item.transform[5],
+      });
+    }
+
     // Render the page once, then crop each silk cluster out of it.
     const viewport = page.getViewport({ scale: RENDER_SCALE });
     const pageCanvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
@@ -155,9 +183,32 @@ export async function extractSilksFromPdf(bytes: Uint8Array): Promise<string[]> 
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, crop.width, crop.height);
       ctx.drawImage(pageCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
-      silks.push(`data:image/png;base64,${crop.toBuffer("image/png").toString("base64")}`);
+      const dataUri = `data:image/png;base64,${crop.toBuffer("image/png").toString("base64")}`;
+
+      const cy = (c.y1 + c.y2) / 2;
+      const candidates = numberTexts.filter(
+        (t) => t.x < c.x1 && t.x > c.x1 - 60 && t.yTop > c.y1 - 10 && t.yTop < c.y2 + 14
+      );
+      candidates.sort((a, b) => Math.abs(a.yTop - cy) - Math.abs(b.yTop - cy));
+
+      entries.push({ no: candidates[0]?.no ?? null, dataUri });
     }
   }
 
-  return silks;
+  // Group into races: saddlecloth numbers restart (at 1) for each new race.
+  const races: SilkEntry[][] = [];
+  let current: SilkEntry[] = [];
+  let prevNo = Infinity;
+  for (const entry of entries) {
+    const no = entry.no ?? prevNo + 1; // unnumbered silk: assume same race
+    if (no <= prevNo && current.length > 0) {
+      races.push(current);
+      current = [];
+    }
+    current.push(entry);
+    prevNo = no;
+  }
+  if (current.length > 0) races.push(current);
+
+  return races;
 }

@@ -78,22 +78,36 @@ async function processUpload(
 
     const extraction = await structureRaceMeeting(rawText);
 
-    // Silk artwork is embedded as images in the PDF, one per runner in
-    // saddlecloth order. Extraction is best-effort: if counts don't line up
-    // we skip attaching rather than risk showing the wrong colours.
+    // Silk artwork is drawn in the PDF beside each runner's saddlecloth
+    // number. Silks come back grouped by race with their numbers, so match
+    // race-by-race on saddlecloth number; unmatched runners keep the
+    // generated placeholder. Extraction failures never fail the upload.
     if (kind === "pdf" && silkBytes) {
       try {
-        const silks = await extractSilksFromPdf(silkBytes);
-        const allRunners = extraction.races.flatMap((race) => race.runners);
-        if (silks.length === allRunners.length) {
-          allRunners.forEach((runner, i) => {
-            (runner as { silkImage?: string }).silkImage = silks[i];
-          });
-        } else {
-          console.warn(
-            `Silk extraction: found ${silks.length} silk images for ${allRunners.length} runners — skipping.`
-          );
-        }
+        const silkRaces = await extractSilksFromPdf(silkBytes);
+        let attached = 0;
+        extraction.races.forEach((race, raceIdx) => {
+          const raceSilks = silkRaces[raceIdx];
+          if (!raceSilks) return;
+          for (const runner of race.runners) {
+            const byNo = raceSilks.find((s) => s.no === runner.no);
+            // Fall back to positional order within the race when the
+            // saddlecloth number couldn't be read next to the silk.
+            const byIndex =
+              raceSilks.length === race.runners.length
+                ? raceSilks[race.runners.indexOf(runner)]
+                : undefined;
+            const silk = byNo ?? byIndex;
+            if (silk) {
+              (runner as { silkImage?: string }).silkImage = silk.dataUri;
+              attached++;
+            }
+          }
+        });
+        const totalRunners = extraction.races.reduce((sum, r) => sum + r.runners.length, 0);
+        console.log(
+          `Silk extraction: attached ${attached}/${totalRunners} silks across ${silkRaces.length} silk groups / ${extraction.races.length} races.`
+        );
       } catch (silkErr) {
         console.warn("Silk extraction failed (continuing without silks):", silkErr);
       }

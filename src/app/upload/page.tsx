@@ -138,10 +138,8 @@ export default function UploadPage() {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }} onClick={(e) => e.stopPropagation()}>
-                {!processing && (
-                  <span className={`${styles.badge} ${failed ? styles.badgeFailed : ""}`}>
-                    {failed ? "Failed" : `${m.reportCount} reports`}
-                  </span>
+                {failed && (
+                  <span className={`${styles.badge} ${styles.badgeFailed}`}>Failed</span>
                 )}
                 {processing && <span className={`${styles.badge} ${styles.badgeProcessing}`}>Processing</span>}
                 {isConfirming ? (

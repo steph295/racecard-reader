@@ -23,7 +23,7 @@ export function usePrintZoom(colWidths: ColumnWidths, visibility: ColumnVisibili
       (visibility.no ? colWidths.no : 0) +
       (visibility.horse ? colWidths.horse : 0) +
       (visibility.jt ? colWidths.jt : 0) +
-      colWidths.comments +
+      (visibility.comments ? colWidths.comments : 0) +
       (visibility.privileges ? colWidths.privileges : 0) +
       (visibility.notes ? colWidths.notes : 0) +
       20;

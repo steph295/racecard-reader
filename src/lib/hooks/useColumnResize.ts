@@ -40,7 +40,7 @@ export function useColumnResize() {
       no: visibility.no,
       horse: visibility.horse,
       jt: visibility.jt,
-      comments: true,
+      comments: visibility.comments,
       privileges: visibility.privileges,
       notes: visibility.notes,
     };

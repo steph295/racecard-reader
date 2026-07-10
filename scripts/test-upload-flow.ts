@@ -13,8 +13,14 @@ async function main() {
   const text = await extractTextFromPdf(bytes);
   console.log("text length:", text.length);
 
-  const silks = await extractSilksFromPdf(silkBytes);
-  console.log("silks extracted:", silks.length);
+  const silkRaces = await extractSilksFromPdf(silkBytes);
+  console.log(
+    "silks extracted:",
+    silkRaces.reduce((n, r) => n + r.length, 0),
+    "in",
+    silkRaces.length,
+    "race groups"
+  );
 }
 
 main().catch((e) => {

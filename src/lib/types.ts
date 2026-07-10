@@ -87,9 +87,9 @@ export interface ColumnVisibility {
   no: boolean;
   horse: boolean;
   jt: boolean;
+  comments: boolean;
   privileges: boolean;
   notes: boolean;
-  // "comments" is always visible - it's the core value prop of the app.
 }
 
 export const DEFAULT_COLUMN_VISIBILITY: ColumnVisibility = {
@@ -97,6 +97,7 @@ export const DEFAULT_COLUMN_VISIBILITY: ColumnVisibility = {
   no: true,
   horse: true,
   jt: true,
+  comments: true,
   privileges: true,
   notes: true,
 };
