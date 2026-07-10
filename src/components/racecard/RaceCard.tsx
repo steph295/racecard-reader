@@ -7,6 +7,7 @@ import type { Divider } from "@/lib/hooks/useColumnResize";
 import { getSilkUrl } from "@/lib/silks";
 import { privilegesToTags } from "@/lib/privilegeTags";
 import { NotesCell } from "./NotesCell";
+import { PrivilegeTags } from "./PrivilegeTags";
 import styles from "./RaceCard.module.css";
 
 interface FlatReportRow {
@@ -72,11 +73,12 @@ interface RaceCardProps {
   visibility: ColumnVisibility;
   dividers: Divider[];
   search: string;
-  /** Show only horses carrying the red hood (RH) privilege. */
-  redHoodOnly: boolean;
+  /** When set, show only horses carrying at least one of these tags. */
+  privilegeFilter: string[] | null;
   /** Show only the N most recent comment entries per horse (null = all). */
   commentLimit: number | null;
   onSaveNote: (runnerId: string, body: string) => void;
+  onSavePrivileges: (runnerId: string, privileges: string) => void;
   pageBreakAfter: boolean;
 }
 
@@ -86,9 +88,10 @@ export function RaceCard({
   visibility,
   dividers,
   search,
-  redHoodOnly,
+  privilegeFilter,
   commentLimit,
   onSaveNote,
+  onSavePrivileges,
   pageBreakAfter,
 }: RaceCardProps) {
   const runners = useMemo(() => {
@@ -102,11 +105,11 @@ export function RaceCard({
           (h.trainer ?? "").toLowerCase().includes(term)
       );
     }
-    if (redHoodOnly) {
-      list = list.filter((h) => privilegesToTags(h.privileges).includes("RH"));
+    if (privilegeFilter) {
+      list = list.filter((h) => privilegesToTags(h.privileges).some((t) => privilegeFilter.includes(t)));
     }
     return list;
-  }, [race.runners, search, redHoodOnly]);
+  }, [race.runners, search, privilegeFilter]);
 
   // The last visible column absorbs leftover width; earlier ones stay fixed.
   const commentsIsLast = visibility.comments && !visibility.notes;
@@ -187,18 +190,10 @@ export function RaceCard({
             {visibility.horse && (
               <div className={styles.horseCell} style={{ width: colWidths.horse, flex: `0 0 ${colWidths.horse}px`, minWidth: COLUMN_MIN_WIDTHS.horse }}>
                 <div className={`${styles.horseName} rc-truncate`}>{horse.name}</div>
-                {(() => {
-                  const tags = privilegesToTags(horse.privileges);
-                  return tags.length > 0 ? (
-                    <div className={styles.privTagRow} title={horse.privileges ?? undefined}>
-                      {tags.map((tag) => (
-                        <span key={tag} className={styles.privTag}>
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null;
-                })()}
+                <PrivilegeTags
+                  privileges={horse.privileges}
+                  onSave={(value) => onSavePrivileges(horse.id, value)}
+                />
                 <div className={`${styles.horseBreeding} rc-truncate`}>
                   {horse.sire ?? "—"} — {horse.dam ?? "—"}
                 </div>
@@ -260,7 +255,7 @@ export function RaceCard({
         <div className={styles.noMatches}>
           {search.trim()
             ? `No runners match "${search}"`
-            : "No red hood runners in this race"}
+            : "No runners match the privileges filter in this race"}
         </div>
       )}
     </div>

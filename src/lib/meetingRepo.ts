@@ -329,6 +329,26 @@ export async function applyPrivileges(
   return { matched, unmatched };
 }
 
+/** Manually edits one runner's privileges (owner-checked). Empty clears them. */
+export async function updateRunnerPrivileges(
+  ownerId: string,
+  runnerId: string,
+  privileges: string
+): Promise<boolean> {
+  const runner = await db.query.runners.findFirst({
+    where: eq(schema.runners.id, runnerId),
+    columns: { id: true },
+    with: { race: { columns: {}, with: { meeting: { columns: { ownerId: true } } } } },
+  });
+  if (!runner || runner.race.meeting.ownerId !== ownerId) return false;
+
+  await db
+    .update(schema.runners)
+    .set({ privileges: privileges.trim() || null })
+    .where(eq(schema.runners.id, runnerId));
+  return true;
+}
+
 export async function upsertNote(userId: string, runnerId: string, body: string) {
   await db
     .insert(schema.notes)

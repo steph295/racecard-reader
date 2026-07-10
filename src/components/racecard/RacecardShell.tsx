@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMeeting, useSaveNote, useUploadPrivileges } from "@/lib/hooks/useMeetings";
+import { useMeeting, useSaveNote, useSavePrivileges, useUploadPrivileges } from "@/lib/hooks/useMeetings";
+import { privilegesToTags, tagMeaning } from "@/lib/privilegeTags";
 import { useColumnResize } from "@/lib/hooks/useColumnResize";
 import { usePrintZoom } from "@/lib/hooks/usePrintZoom";
 import { Sidebar } from "./Sidebar";
@@ -64,11 +65,14 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   const router = useRouter();
   const { data: meeting, isLoading, error } = useMeeting(meetingId);
   const saveNote = useSaveNote(meetingId);
+  const savePrivileges = useSavePrivileges(meetingId);
   const uploadPrivileges = useUploadPrivileges(meetingId);
   const privilegesInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
-  const [redHoodOnly, setRedHoodOnly] = useState(false);
+  // Privilege facet: tags start checked; unchecking any narrows the card to
+  // horses carrying at least one still-checked tag.
+  const [excludedPrivTags, setExcludedPrivTags] = useState<string[]>([]);
   const [commentLimit, setCommentLimit] = useState<number | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [printAll, setPrintAll] = useState(false);
@@ -113,6 +117,38 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
     (runnerId: string, body: string) => saveNote.mutate({ runnerId, body }),
     [saveNote]
   );
+
+  const handleSavePrivileges = useCallback(
+    (runnerId: string, privileges: string) => savePrivileges.mutate({ runnerId, privileges }),
+    [savePrivileges]
+  );
+
+  // Distinct privilege tags across the whole meeting, with horse counts.
+  const privilegeOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const race of meeting?.races ?? []) {
+      for (const runner of race.runners) {
+        for (const tag of privilegesToTags(runner.privileges)) {
+          counts.set(tag, (counts.get(tag) ?? 0) + 1);
+        }
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([tag, count]) => ({ tag, label: tagMeaning(tag), count }));
+  }, [meeting]);
+
+  const handleTogglePrivTag = useCallback((tag: string) => {
+    setExcludedPrivTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  }, []);
+
+  // null = filter inactive (everything shown, incl. horses with no privileges)
+  const privilegeFilter =
+    excludedPrivTags.length > 0
+      ? privilegeOptions.map((o) => o.tag).filter((t) => !excludedPrivTags.includes(t))
+      : null;
 
   const handlePrivilegesFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,8 +248,10 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
             onClose={() => setFiltersOpen(false)}
             search={search}
             onSearchChange={setSearch}
-            redHoodOnly={redHoodOnly}
-            onToggleRedHoodOnly={() => setRedHoodOnly((v) => !v)}
+            privilegeOptions={privilegeOptions}
+            excludedPrivTags={excludedPrivTags}
+            onTogglePrivTag={handleTogglePrivTag}
+            onResetPrivTags={() => setExcludedPrivTags([])}
             commentLimit={commentLimit}
             onChangeCommentLimit={setCommentLimit}
             visibility={visibility}
@@ -254,9 +292,10 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
               visibility={visibility}
               dividers={dividers}
               search={search}
-              redHoodOnly={redHoodOnly}
+              privilegeFilter={privilegeFilter}
               commentLimit={commentLimit}
               onSaveNote={handleSaveNote}
+              onSavePrivileges={handleSavePrivileges}
               pageBreakAfter={i < racesToRender.length - 1}
             />
           </div>

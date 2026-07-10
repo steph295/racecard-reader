@@ -98,6 +98,34 @@ export function useUploadPrivileges(meetingId: string) {
   });
 }
 
+export function useSavePrivileges(meetingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { runnerId: string; privileges: string }) =>
+      fetchJson(`/api/runners/${vars.runnerId}/privileges`, {
+        method: "PUT",
+        body: JSON.stringify({ privileges: vars.privileges }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    onSuccess: (_data, vars) => {
+      queryClient.setQueryData<{ meeting: MeetingDetailDTO } | undefined>(meetingKey(meetingId), (prev) => {
+        if (!prev) return prev;
+        return {
+          meeting: {
+            ...prev.meeting,
+            races: prev.meeting.races.map((race) => ({
+              ...race,
+              runners: race.runners.map((r) =>
+                r.id === vars.runnerId ? { ...r, privileges: vars.privileges.trim() || null } : r
+              ),
+            })),
+          },
+        };
+      });
+    },
+  });
+}
+
 export function useSaveNote(meetingId: string) {
   const queryClient = useQueryClient();
   return useMutation({

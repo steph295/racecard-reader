@@ -32,6 +32,34 @@ const KEYWORD_TAGS: [RegExp, string][] = [
   [/fed|feed/i, "FED"],
 ];
 
+/** Full meaning of each abbreviation, for tooltips and the filter panel. */
+const TAG_MEANINGS: Record<string, string> = {
+  RH: "Red hood",
+  E: "Early to post",
+  MC: "Mounting at start / chute",
+  FW: "Wisp in front",
+  "EAR OUT": "Earplugs taken out",
+  "EAR IN": "Earplugs staying in",
+  HP: "Hood in parade ring",
+  SR: "Starters report",
+  WITS: "Withdrawn if tongue strap",
+  B1: "Blinkers (first time)",
+  TT: "Tongue tie",
+  CP: "Cheekpieces",
+  V: "Visor",
+  LL: "Late load",
+  AS: "Assistance at start",
+  WP: "Withdrawn if any plate shed",
+  WPF: "Withdrawn if foreleg plate shed",
+  FED: "Fed on course",
+  BLD: "Blind to load",
+  RUG: "Stalls rug",
+};
+
+export function tagMeaning(tag: string): string {
+  return TAG_MEANINGS[tag.toUpperCase()] ?? tag;
+}
+
 /** Legacy flag codes from earlier sheet uploads -> current scheme. */
 const LEGACY_FLAG_MAP: Record<string, string> = {
   ES: "E",

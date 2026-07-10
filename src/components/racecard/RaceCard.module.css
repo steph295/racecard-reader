@@ -228,6 +228,38 @@
   margin: 2px 0 3px;
 }
 
+.privEditBtn {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font-size: 10px;
+  line-height: 1;
+  color: #b5b5b5;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.row:hover .privEditBtn {
+  opacity: 1;
+}
+
+.privEditBtn:hover {
+  color: #1a1a1a;
+}
+
+.privEditInput {
+  width: 100%;
+  max-width: 180px;
+  margin: 2px 0 3px;
+  padding: 3px 6px;
+  border: 1px solid #c9c9c9;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
 .privTag {
   display: inline-block;
   font-size: 9px;

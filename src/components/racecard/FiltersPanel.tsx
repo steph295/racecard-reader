@@ -9,8 +9,10 @@ interface FiltersPanelProps {
   onClose: () => void;
   search: string;
   onSearchChange: (value: string) => void;
-  redHoodOnly: boolean;
-  onToggleRedHoodOnly: () => void;
+  privilegeOptions: { tag: string; label: string; count: number }[];
+  excludedPrivTags: string[];
+  onTogglePrivTag: (tag: string) => void;
+  onResetPrivTags: () => void;
   commentLimit: number | null;
   onChangeCommentLimit: (limit: number | null) => void;
   visibility: ColumnVisibility;
@@ -35,8 +37,10 @@ export function FiltersPanel({
   onClose,
   search,
   onSearchChange,
-  redHoodOnly,
-  onToggleRedHoodOnly,
+  privilegeOptions,
+  excludedPrivTags,
+  onTogglePrivTag,
+  onResetPrivTags,
   commentLimit,
   onChangeCommentLimit,
   visibility,
@@ -102,12 +106,34 @@ export function FiltersPanel({
             </div>
 
             <div className={styles.group}>
-              <div className={styles.sectionLabel}>Privileges</div>
-              <div className={styles.chipRow}>
-                <button className={chipClass(redHoodOnly)} onClick={onToggleRedHoodOnly}>
-                  Red hood (RH) only
-                </button>
+              <div className={styles.panelHeader}>
+                <div className={styles.sectionLabel}>Privileges</div>
+                {excludedPrivTags.length > 0 && (
+                  <button className={styles.resetLink} onClick={onResetPrivTags}>
+                    Show all
+                  </button>
+                )}
               </div>
+              {privilegeOptions.length === 0 ? (
+                <div className={styles.emptyHint}>Upload a privileges sheet to filter by privilege.</div>
+              ) : (
+                <div className={styles.checkList}>
+                  {privilegeOptions.map((opt) => {
+                    const checked = !excludedPrivTags.includes(opt.tag);
+                    return (
+                      <label
+                        key={opt.tag}
+                        className={`${styles.checkRow} ${checked ? styles.checkRowChecked : ""}`}
+                        title={opt.tag}
+                      >
+                        <input type="checkbox" checked={checked} onChange={() => onTogglePrivTag(opt.tag)} />
+                        <span className={styles.checkLabel}>{opt.label}</span>
+                        <span className={styles.checkCount}>({opt.count})</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className={styles.group}>
