@@ -72,6 +72,8 @@ interface RaceCardProps {
   visibility: ColumnVisibility;
   dividers: Divider[];
   search: string;
+  /** Show only horses carrying the red hood (RH) privilege. */
+  redHoodOnly: boolean;
   /** Show only the N most recent comment entries per horse (null = all). */
   commentLimit: number | null;
   onSaveNote: (runnerId: string, body: string) => void;
@@ -84,6 +86,7 @@ export function RaceCard({
   visibility,
   dividers,
   search,
+  redHoodOnly,
   commentLimit,
   onSaveNote,
   pageBreakAfter,
@@ -99,8 +102,11 @@ export function RaceCard({
           (h.trainer ?? "").toLowerCase().includes(term)
       );
     }
+    if (redHoodOnly) {
+      list = list.filter((h) => privilegesToTags(h.privileges).includes("RH"));
+    }
     return list;
-  }, [race.runners, search]);
+  }, [race.runners, search, redHoodOnly]);
 
   // The last visible column absorbs leftover width; earlier ones stay fixed.
   const commentsIsLast = visibility.comments && !visibility.notes;
@@ -250,7 +256,13 @@ export function RaceCard({
         );
       })}
 
-      {runners.length === 0 && <div className={styles.noMatches}>{`No runners match "${search}"`}</div>}
+      {runners.length === 0 && (
+        <div className={styles.noMatches}>
+          {search.trim()
+            ? `No runners match "${search}"`
+            : "No red hood runners in this race"}
+        </div>
+      )}
     </div>
   );
 }

@@ -9,6 +9,8 @@ interface FiltersPanelProps {
   onClose: () => void;
   search: string;
   onSearchChange: (value: string) => void;
+  redHoodOnly: boolean;
+  onToggleRedHoodOnly: () => void;
   commentLimit: number | null;
   onChangeCommentLimit: (limit: number | null) => void;
   visibility: ColumnVisibility;
@@ -33,6 +35,8 @@ export function FiltersPanel({
   onClose,
   search,
   onSearchChange,
+  redHoodOnly,
+  onToggleRedHoodOnly,
   commentLimit,
   onChangeCommentLimit,
   visibility,
@@ -93,6 +97,15 @@ export function FiltersPanel({
                 </button>
                 <button className={chipClass(visibility.notes)} onClick={() => onToggleColumn("notes")}>
                   My Notes
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.group}>
+              <div className={styles.sectionLabel}>Privileges</div>
+              <div className={styles.chipRow}>
+                <button className={chipClass(redHoodOnly)} onClick={onToggleRedHoodOnly}>
+                  Red hood (RH) only
                 </button>
               </div>
             </div>
