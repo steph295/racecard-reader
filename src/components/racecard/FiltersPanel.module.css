@@ -19,6 +19,23 @@
   border-color: #1a1a1a;
 }
 
+.filtersButtonActive {
+  background: #2a6fdb;
+  border-color: #2a6fdb;
+  color: #fff;
+}
+
+.filtersButtonActive .chevron,
+.filtersButtonActive .activeCount {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.filterIcon {
+  margin-right: 8px;
+  font-size: 12px;
+  line-height: 1;
+}
+
 .hamburger {
   display: inline-flex;
   flex-direction: column;
@@ -72,8 +89,102 @@
   border-radius: 10px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
   padding: 18px;
-  width: 360px;
+  width: min(720px, 86vw);
   box-sizing: border-box;
+}
+
+.panelNarrow {
+  width: 280px;
+}
+
+.panelTitleRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
+.panelTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.showingLabel {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+}
+
+.activeCount {
+  margin-left: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #2a6fdb;
+}
+
+.eyeIcon {
+  margin-right: 8px;
+  flex: none;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.column {
+  min-width: 0;
+}
+
+.column + .column {
+  border-left: 1px solid #f0f0f0;
+  padding-left: 20px;
+}
+
+.columnHint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #bbb;
+  line-height: 1.45;
+}
+
+.panelFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.resetColumnsBtn {
+  border: 1px solid #d5d5d5;
+  background: #fff;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+}
+
+.resetColumnsBtn:hover {
+  border-color: #1a1a1a;
+}
+
+@media (max-width: 900px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+
+  .column + .column {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 16px;
+  }
 }
 
 .panelHeader {
@@ -89,6 +200,10 @@
   letter-spacing: 0.05em;
   color: #999;
   text-transform: uppercase;
+}
+
+.sectionLabelSpaced {
+  margin-top: 20px;
 }
 
 .resetLink {

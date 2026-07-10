@@ -5,7 +5,8 @@ import type { RaceDTO, RunnerDTO } from "@/lib/types";
 import { COLUMN_MIN_WIDTHS, SILK_COLUMN_WIDTH, type ColumnVisibility, type ColumnWidths } from "@/lib/types";
 import type { Divider } from "@/lib/hooks/useColumnResize";
 import { getSilkUrl } from "@/lib/silks";
-import { privilegesToTags } from "@/lib/privilegeTags";
+import { filterRunners } from "@/lib/filterRunners";
+import { horseCommentCategory } from "@/lib/commentCategories";
 import { NotesCell } from "./NotesCell";
 import { PrivilegeTags } from "./PrivilegeTags";
 import styles from "./RaceCard.module.css";
@@ -48,9 +49,33 @@ function limitReports(reports: RunnerDTO["reports"], limit: number | null): Runn
   return newestFirst ? reports.slice(0, limit) : reports.slice(-limit);
 }
 
-function flattenReports(runner: RunnerDTO, commentLimit: number | null): FlatReportRow[] {
+function flattenReports(
+  runner: RunnerDTO,
+  commentLimit: number | null,
+  categoryFilter: string[] | null
+): FlatReportRow[] {
+  let reports = runner.reports;
+  if (categoryFilter) {
+    reports = reports
+      .map((r) => ({
+        ...r,
+        items: r.items.filter((item) => {
+          const bucket = horseCommentCategory(item.category, item.detail);
+          return bucket != null && categoryFilter.includes(bucket);
+        }),
+      }))
+      .filter((r) => r.items.length > 0);
+  } else {
+    // No category filter active — still drop other-team comments entirely.
+    reports = reports
+      .map((r) => ({
+        ...r,
+        items: r.items.filter((item) => horseCommentCategory(item.category, item.detail) != null),
+      }))
+      .filter((r) => r.items.length > 0);
+  }
   const rows: FlatReportRow[] = [];
-  limitReports(runner.reports, commentLimit).forEach((report) => {
+  limitReports(reports, commentLimit).forEach((report) => {
     report.items.forEach((item, i) => {
       rows.push({
         key: `${report.id}-${item.id}`,
@@ -75,6 +100,8 @@ interface RaceCardProps {
   search: string;
   /** When set, show only horses carrying at least one of these tags. */
   privilegeFilter: string[] | null;
+  /** When set, show only comment entries from these categories. */
+  commentCategoryFilter: string[] | null;
   /** Show only the N most recent comment entries per horse (null = all). */
   commentLimit: number | null;
   onSaveNote: (runnerId: string, body: string) => void;
@@ -89,27 +116,16 @@ export function RaceCard({
   dividers,
   search,
   privilegeFilter,
+  commentCategoryFilter,
   commentLimit,
   onSaveNote,
   onSavePrivileges,
   pageBreakAfter,
 }: RaceCardProps) {
-  const runners = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    let list: RunnerDTO[] = race.runners;
-    if (term) {
-      list = list.filter(
-        (h) =>
-          h.name.toLowerCase().includes(term) ||
-          (h.jockey ?? "").toLowerCase().includes(term) ||
-          (h.trainer ?? "").toLowerCase().includes(term)
-      );
-    }
-    if (privilegeFilter) {
-      list = list.filter((h) => privilegesToTags(h.privileges).some((t) => privilegeFilter.includes(t)));
-    }
-    return list;
-  }, [race.runners, search, privilegeFilter]);
+  const runners = useMemo(
+    () => filterRunners(race.runners, search, privilegeFilter),
+    [race.runners, search, privilegeFilter]
+  );
 
   // The last visible column absorbs leftover width; earlier ones stay fixed.
   const commentsIsLast = visibility.comments && !visibility.notes;
@@ -163,7 +179,7 @@ export function RaceCard({
       </div>
 
       {runners.map((horse, idx) => {
-        const rows = flattenReports(horse, commentLimit);
+        const rows = flattenReports(horse, commentLimit, commentCategoryFilter);
         const hasReports = rows.length > 0;
         return (
           <div key={horse.id} className={`${styles.row} ${horse.nonRunner ? styles.rowNonRunner : ""}`}>
@@ -190,10 +206,12 @@ export function RaceCard({
             {visibility.horse && (
               <div className={styles.horseCell} style={{ width: colWidths.horse, flex: `0 0 ${colWidths.horse}px`, minWidth: COLUMN_MIN_WIDTHS.horse }}>
                 <div className={`${styles.horseName} rc-truncate`}>{horse.name}</div>
-                <PrivilegeTags
-                  privileges={horse.privileges}
-                  onSave={(value) => onSavePrivileges(horse.id, value)}
-                />
+                {visibility.privileges && (
+                  <PrivilegeTags
+                    privileges={horse.privileges}
+                    onSave={(value) => onSavePrivileges(horse.id, value)}
+                  />
+                )}
                 <div className={`${styles.horseBreeding} rc-truncate`}>
                   {horse.sire ?? "—"} — {horse.dam ?? "—"}
                 </div>

@@ -4,10 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMeeting, useSaveNote, useSavePrivileges, useUploadPrivileges } from "@/lib/hooks/useMeetings";
 import { privilegesToTags, tagMeaning } from "@/lib/privilegeTags";
+import { countHorseCommentCategories, HORSE_COMMENT_CATEGORIES } from "@/lib/commentCategories";
+import { filterRunners } from "@/lib/filterRunners";
 import { useColumnResize } from "@/lib/hooks/useColumnResize";
 import { usePrintZoom } from "@/lib/hooks/usePrintZoom";
 import { Sidebar } from "./Sidebar";
 import { FiltersPanel } from "./FiltersPanel";
+import { ColumnsPanel } from "./ColumnsPanel";
 import { RaceCard } from "./RaceCard";
 import { PrintRaceTabs } from "./PrintRaceTabs";
 import styles from "./RacecardShell.module.css";
@@ -73,8 +76,10 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   // Privilege facet: tags start checked; unchecking any narrows the card to
   // horses carrying at least one still-checked tag.
   const [excludedPrivTags, setExcludedPrivTags] = useState<string[]>([]);
+  const [checkedCommentCats, setCheckedCommentCats] = useState<string[]>([]);
   const [commentLimit, setCommentLimit] = useState<number | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [columnsOpen, setColumnsOpen] = useState(false);
   const [printAll, setPrintAll] = useState(false);
   const [printUnsupported, setPrintUnsupported] = useState(false);
   const [privilegesNotice, setPrivilegesNotice] = useState<string | null>(null);
@@ -144,11 +149,61 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
     );
   }, []);
 
+  const handleToggleCommentCat = useCallback((category: string) => {
+    setCheckedCommentCats((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+    );
+  }, []);
+
+  const handleClearAllFilters = useCallback(() => {
+    setSearch("");
+    setExcludedPrivTags([]);
+    setCheckedCommentCats([]);
+    setCommentLimit(null);
+  }, []);
+
   // null = filter inactive (everything shown, incl. horses with no privileges)
   const privilegeFilter =
     excludedPrivTags.length > 0
       ? privilegeOptions.map((o) => o.tag).filter((t) => !excludedPrivTags.includes(t))
       : null;
+
+  const commentCategoryFilter = checkedCommentCats.length > 0 ? checkedCommentCats : null;
+
+  const allRunners = useMemo(
+    () => meeting?.races.flatMap((r) => r.runners) ?? [],
+    [meeting]
+  );
+
+  const commentCategoryOptions = useMemo(() => {
+    const counted = countHorseCommentCategories(allRunners);
+    const byCat = new Map(counted.map((c) => [c.category, c.count]));
+    return HORSE_COMMENT_CATEGORIES.map((category) => ({
+      category,
+      count: byCat.get(category) ?? 0,
+    }));
+  }, [allRunners]);
+
+  const visibleRunners = useMemo(() => {
+    if (!meeting) return 0;
+    const race = meeting.races.find((r) => r.number === raceNumber) ?? meeting.races[0];
+    return filterRunners(race?.runners ?? [], search, privilegeFilter).length;
+  }, [meeting, raceNumber, search, privilegeFilter]);
+
+  const totalRunners = useMemo(() => {
+    if (!meeting) return 0;
+    const race = meeting.races.find((r) => r.number === raceNumber) ?? meeting.races[0];
+    return race?.runners.length ?? 0;
+  }, [meeting, raceNumber]);
+
+  const activeCount = useMemo(() => {
+    let n = 0;
+    if (search.trim()) n++;
+    if (excludedPrivTags.length > 0) n++;
+    if (checkedCommentCats.length > 0) n++;
+    if (commentLimit != null) n++;
+    return n;
+  }, [search, excludedPrivTags, checkedCommentCats, commentLimit]);
 
   const handlePrivilegesFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,22 +297,41 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
           </div>
         )}
         <div className={`rc-noprint ${styles.toolbar}`}>
-          <FiltersPanel
-            open={filtersOpen}
-            onToggle={() => setFiltersOpen((v) => !v)}
-            onClose={() => setFiltersOpen(false)}
-            search={search}
-            onSearchChange={setSearch}
-            privilegeOptions={privilegeOptions}
-            excludedPrivTags={excludedPrivTags}
-            onTogglePrivTag={handleTogglePrivTag}
-            onResetPrivTags={() => setExcludedPrivTags([])}
-            commentLimit={commentLimit}
-            onChangeCommentLimit={setCommentLimit}
-            visibility={visibility}
-            onToggleColumn={toggleColumn}
-            onResetColumns={resetColumns}
-          />
+          <div className={styles.toolbarLeft}>
+            <FiltersPanel
+              open={filtersOpen}
+              onToggle={() => {
+                setFiltersOpen((v) => !v);
+                setColumnsOpen(false);
+              }}
+              onClose={() => setFiltersOpen(false)}
+              search={search}
+              onSearchChange={setSearch}
+              privilegeOptions={privilegeOptions}
+              excludedPrivTags={excludedPrivTags}
+              onTogglePrivTag={handleTogglePrivTag}
+              commentCategoryOptions={commentCategoryOptions}
+              checkedCommentCats={checkedCommentCats}
+              onToggleCommentCat={handleToggleCommentCat}
+              commentLimit={commentLimit}
+              onChangeCommentLimit={setCommentLimit}
+              visibleRunners={visibleRunners}
+              totalRunners={totalRunners}
+              activeCount={activeCount}
+              onClearAll={handleClearAllFilters}
+            />
+            <ColumnsPanel
+              open={columnsOpen}
+              onToggle={() => {
+                setColumnsOpen((v) => !v);
+                setFiltersOpen(false);
+              }}
+              onClose={() => setColumnsOpen(false)}
+              visibility={visibility}
+              onToggleColumn={toggleColumn}
+              onResetColumns={resetColumns}
+            />
+          </div>
           <input
             ref={privilegesInputRef}
             type="file"
@@ -293,6 +367,7 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
               dividers={dividers}
               search={search}
               privilegeFilter={privilegeFilter}
+              commentCategoryFilter={commentCategoryFilter}
               commentLimit={commentLimit}
               onSaveNote={handleSaveNote}
               onSavePrivileges={handleSavePrivileges}

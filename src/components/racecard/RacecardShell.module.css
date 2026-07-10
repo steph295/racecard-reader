@@ -21,6 +21,12 @@
   position: relative;
 }
 
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .privilegesUploadBtn {
   border: 1px solid #d8d8d8;
   background: #fff;

@@ -84,6 +84,8 @@ export interface ColumnVisibility {
   no: boolean;
   horse: boolean;
   jt: boolean;
+  /** Privilege/headgear tags under the horse name. */
+  privileges: boolean;
   comments: boolean;
   notes: boolean;
 }
@@ -93,6 +95,7 @@ export const DEFAULT_COLUMN_VISIBILITY: ColumnVisibility = {
   no: true,
   horse: true,
   jt: true,
+  privileges: true,
   comments: true,
   notes: true,
 };
