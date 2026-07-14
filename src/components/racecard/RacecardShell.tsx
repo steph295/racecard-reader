@@ -2,10 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMeeting, useSaveNote, useSavePrivileges, useUploadPrivileges } from "@/lib/hooks/useMeetings";
-import { privilegesToTags, tagMeaning } from "@/lib/privilegeTags";
+import { useMeeting, useSaveNote, useUploadPrivileges } from "@/lib/hooks/useMeetings";
+import { privilegesToTags } from "@/lib/privilegeTags";
+import { glossaryLabel } from "@/lib/privilegeGlossary";
 import { countHorseCommentCategories, HORSE_COMMENT_CATEGORIES } from "@/lib/commentCategories";
+import { computeRacePrintMetrics } from "@/lib/printScale";
+import { SILK_COLUMN_WIDTH } from "@/lib/types";
 import { filterRunners } from "@/lib/filterRunners";
+import { usePrivilegeGlossary } from "@/lib/hooks/usePrivilegeGlossary";
 import { useColumnResize } from "@/lib/hooks/useColumnResize";
 import { usePrintZoom } from "@/lib/hooks/usePrintZoom";
 import { Sidebar } from "./Sidebar";
@@ -68,8 +72,9 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   const router = useRouter();
   const { data: meeting, isLoading, error } = useMeeting(meetingId);
   const saveNote = useSaveNote(meetingId);
-  const savePrivileges = useSavePrivileges(meetingId);
   const uploadPrivileges = useUploadPrivileges(meetingId);
+  const { glossary: privilegeGlossary, updateEntry: updatePrivilegeGlossary } =
+    usePrivilegeGlossary(meetingId);
   const privilegesInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
@@ -77,7 +82,7 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   // horses carrying at least one still-checked tag.
   const [excludedPrivTags, setExcludedPrivTags] = useState<string[]>([]);
   const [checkedCommentCats, setCheckedCommentCats] = useState<string[]>([]);
-  const [commentLimit, setCommentLimit] = useState<number | null>(null);
+  const [commentLimit, setCommentLimit] = useState<number | null>(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [printAll, setPrintAll] = useState(false);
@@ -99,7 +104,7 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   }, [raceNumber]);
 
   const { colWidths, visibility, dividers, resetColumns, toggleColumn } = useColumnResize();
-  usePrintZoom(colWidths, visibility);
+  usePrintZoom();
 
   const handlePrintAll = useCallback(() => {
     // Embedded editor webviews (e.g. the Cursor/VS Code browser panel) can't
@@ -123,11 +128,6 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
     [saveNote]
   );
 
-  const handleSavePrivileges = useCallback(
-    (runnerId: string, privileges: string) => savePrivileges.mutate({ runnerId, privileges }),
-    [savePrivileges]
-  );
-
   // Distinct privilege tags across the whole meeting, with horse counts.
   const privilegeOptions = useMemo(() => {
     const counts = new Map<string, number>();
@@ -139,9 +139,9 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
       }
     }
     return [...counts.entries()]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([tag, count]) => ({ tag, label: tagMeaning(tag), count }));
-  }, [meeting]);
+      .sort((a, b) => b[1] - a[1] || glossaryLabel(privilegeGlossary, a[0]).localeCompare(glossaryLabel(privilegeGlossary, b[0])))
+      .map(([tag, count]) => ({ tag, count }));
+  }, [meeting, privilegeGlossary]);
 
   const handleTogglePrivTag = useCallback((tag: string) => {
     setExcludedPrivTags((prev) =>
@@ -159,14 +159,8 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
     setSearch("");
     setExcludedPrivTags([]);
     setCheckedCommentCats([]);
-    setCommentLimit(null);
+    setCommentLimit(1);
   }, []);
-
-  // null = filter inactive (everything shown, incl. horses with no privileges)
-  const privilegeFilter =
-    excludedPrivTags.length > 0
-      ? privilegeOptions.map((o) => o.tag).filter((t) => !excludedPrivTags.includes(t))
-      : null;
 
   const commentCategoryFilter = checkedCommentCats.length > 0 ? checkedCommentCats : null;
 
@@ -187,8 +181,8 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
   const visibleRunners = useMemo(() => {
     if (!meeting) return 0;
     const race = meeting.races.find((r) => r.number === raceNumber) ?? meeting.races[0];
-    return filterRunners(race?.runners ?? [], search, privilegeFilter).length;
-  }, [meeting, raceNumber, search, privilegeFilter]);
+    return filterRunners(race?.runners ?? [], search).length;
+  }, [meeting, raceNumber, search]);
 
   const totalRunners = useMemo(() => {
     if (!meeting) return 0;
@@ -201,7 +195,7 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
     if (search.trim()) n++;
     if (excludedPrivTags.length > 0) n++;
     if (checkedCommentCats.length > 0) n++;
-    if (commentLimit != null) n++;
+    if (commentLimit != null && commentLimit !== 1) n++;
     return n;
   }, [search, excludedPrivTags, checkedCommentCats, commentLimit]);
 
@@ -308,6 +302,8 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
               search={search}
               onSearchChange={setSearch}
               privilegeOptions={privilegeOptions}
+              privilegeGlossary={privilegeGlossary}
+              onUpdatePrivilegeGlossary={updatePrivilegeGlossary}
               excludedPrivTags={excludedPrivTags}
               onTogglePrivTag={handleTogglePrivTag}
               commentCategoryOptions={commentCategoryOptions}
@@ -357,24 +353,41 @@ export function RacecardShell({ meetingId, raceNumber }: RacecardShellProps) {
           </div>
         )}
 
-        {racesToRender.map((race, i) => (
-          <div key={race.id} id={`race-${race.number}`}>
-            <PrintRaceTabs races={meeting.races} activeRaceNumber={race.number} />
-            <RaceCard
-              race={race}
-              colWidths={colWidths}
-              visibility={visibility}
-              dividers={dividers}
-              search={search}
-              privilegeFilter={privilegeFilter}
-              commentCategoryFilter={commentCategoryFilter}
-              commentLimit={commentLimit}
-              onSaveNote={handleSaveNote}
-              onSavePrivileges={handleSavePrivileges}
-              pageBreakAfter={i < racesToRender.length - 1}
-            />
-          </div>
-        ))}
+        {racesToRender.map((race, i) => {
+          const print = computeRacePrintMetrics(race.runners.length);
+          return (
+            <div
+              key={race.id}
+              id={`race-${race.number}`}
+              className="rc-race-page"
+              style={{
+                ["--rc-print-font-size" as string]: `${print.fontSizePx}px`,
+                ["--rc-print-row-height" as string]: `${print.rowHeightPx}px`,
+                ["--rc-print-rows-area" as string]: `${print.rowsAreaPx}px`,
+                ["--rc-print-tag-size" as string]: `${print.tagFontSizePx}px`,
+                ["--rc-print-cell-padding" as string]: `${print.cellPaddingPx}px`,
+                ["--rc-print-line-height" as string]: String(print.lineHeight),
+                ["--rc-print-silk-width" as string]: `${SILK_COLUMN_WIDTH}px`,
+                ...(i < racesToRender.length - 1 ? { pageBreakAfter: "always", breakAfter: "page" } : {}),
+              }}
+            >
+              <PrintRaceTabs races={meeting.races} activeRaceNumber={race.number} />
+              <RaceCard
+                race={race}
+                colWidths={colWidths}
+                visibility={visibility}
+                dividers={dividers}
+                search={search}
+                hiddenPrivTags={excludedPrivTags}
+                commentCategoryFilter={commentCategoryFilter}
+                commentLimit={commentLimit}
+                privilegeGlossary={privilegeGlossary}
+                onSaveNote={handleSaveNote}
+                printMode={printAll}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

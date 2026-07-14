@@ -77,7 +77,7 @@ export const COLUMN_MIN_WIDTHS: ColumnWidths = {
   notes: 100,
 };
 
-export const SILK_COLUMN_WIDTH = 66;
+export const SILK_COLUMN_WIDTH = 120;
 
 export interface ColumnVisibility {
   silk: boolean;

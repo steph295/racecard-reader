@@ -8,9 +8,20 @@
 .main {
   flex: 1;
   min-width: 0;
-  padding: 28px 40px 70px;
+  width: 100%;
+  padding: 28px 24px 70px;
   box-sizing: border-box;
-  overflow-x: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+@media (min-width: 1200px) {
+  .main {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
 }
 
 .toolbar {

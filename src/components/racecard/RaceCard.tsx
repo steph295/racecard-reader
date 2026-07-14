@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import type { PrivilegeGlossary } from "@/lib/privilegeGlossary";
 import type { RaceDTO, RunnerDTO } from "@/lib/types";
-import { COLUMN_MIN_WIDTHS, SILK_COLUMN_WIDTH, type ColumnVisibility, type ColumnWidths } from "@/lib/types";
+import { COLUMN_ORDER, type ColumnKey, type ColumnVisibility, type ColumnWidths } from "@/lib/types";
 import type { Divider } from "@/lib/hooks/useColumnResize";
+import { useMeasuredDividerPositions } from "@/lib/hooks/useMeasuredDividerPositions";
+import { columnStyle, silkColumnStyle } from "@/lib/columnFlex";
 import { getSilkUrl } from "@/lib/silks";
 import { filterRunners } from "@/lib/filterRunners";
 import { horseCommentCategory } from "@/lib/commentCategories";
@@ -98,15 +101,16 @@ interface RaceCardProps {
   visibility: ColumnVisibility;
   dividers: Divider[];
   search: string;
-  /** When set, show only horses carrying at least one of these tags. */
-  privilegeFilter: string[] | null;
+  /** Privilege tags unchecked in Quick filters — hidden per row, not runner removal. */
+  hiddenPrivTags: string[];
   /** When set, show only comment entries from these categories. */
   commentCategoryFilter: string[] | null;
   /** Show only the N most recent comment entries per horse (null = all). */
   commentLimit: number | null;
+  privilegeGlossary: PrivilegeGlossary;
   onSaveNote: (runnerId: string, body: string) => void;
-  onSavePrivileges: (runnerId: string, privileges: string) => void;
-  pageBreakAfter: boolean;
+  /** When true, show every runner and apply print layout (ignore on-screen filters). */
+  printMode?: boolean;
 }
 
 export function RaceCard({
@@ -115,30 +119,62 @@ export function RaceCard({
   visibility,
   dividers,
   search,
-  privilegeFilter,
+  hiddenPrivTags,
   commentCategoryFilter,
   commentLimit,
+  privilegeGlossary,
   onSaveNote,
-  onSavePrivileges,
-  pageBreakAfter,
+  printMode = false,
 }: RaceCardProps) {
   const runners = useMemo(
-    () => filterRunners(race.runners, search, privilegeFilter),
-    [race.runners, search, privilegeFilter]
+    () => (printMode ? race.runners : filterRunners(race.runners, search)),
+    [race.runners, search, printMode]
   );
 
-  // The last visible column absorbs leftover width; earlier ones stay fixed.
-  const commentsIsLast = visibility.comments && !visibility.notes;
-  const commentsCellStyle = commentsIsLast
-    ? { flex: `1 1 ${colWidths.comments}px`, minWidth: colWidths.comments }
-    : { flex: `0 0 ${colWidths.comments}px`, minWidth: 0 };
+  // Proportional flex columns — weights come from the user's column widths.
+  const noStyle = columnStyle("no", colWidths);
+  const horseStyle = columnStyle("horse", colWidths);
+  const jtStyle = columnStyle("jt", colWidths);
+  const commentsStyle = columnStyle("comments", colWidths);
+  const notesStyle = columnStyle("notes", colWidths);
+  const silkStyle = silkColumnStyle();
+  const headRowRef = useRef<HTMLDivElement>(null);
+
+  const lastColumn = useMemo(() => {
+    if (visibility.notes) return "notes";
+    if (visibility.comments) return "comments";
+    if (visibility.jt) return "jt";
+    if (visibility.horse) return "horse";
+    if (visibility.no) return "no";
+    if (visibility.silk) return "silk";
+    return null;
+  }, [visibility]);
+
+  const border = (col: string) => (col !== lastColumn ? styles.colBorder : "");
+
+  const visibleCols = useMemo<ColumnKey[]>(() => {
+    const show: Record<ColumnKey, boolean> = {
+      no: visibility.no,
+      horse: visibility.horse,
+      jt: visibility.jt,
+      comments: visibility.comments,
+      notes: visibility.notes,
+    };
+    return COLUMN_ORDER.filter((k) => show[k]);
+  }, [visibility]);
+
+  const layoutKey = `${visibility.silk}-${visibleCols.join(",")}-${colWidths.no}-${colWidths.horse}-${colWidths.jt}-${colWidths.comments}-${colWidths.notes}`;
+  const measuredDividers = useMeasuredDividerPositions(
+    headRowRef,
+    dividers,
+    visibleCols,
+    visibility.silk,
+    layoutKey
+  );
 
   return (
-    <div
-      className="rc-card"
-      style={{ marginBottom: 24, ...(pageBreakAfter ? { pageBreakAfter: "always", breakAfter: "page" } : {}) }}
-    >
-      {dividers.map((d) => (
+    <div className="rc-card" style={{ marginBottom: printMode ? 0 : 24 }}>
+      {measuredDividers.map((d) => (
         <div
           key={d.key}
           className={`rc-noprint ${styles.divider} ${d.isEnd ? styles.dividerEnd : ""} ${d.active ? styles.dividerActive : ""}`}
@@ -158,33 +194,31 @@ export function RaceCard({
         </div>
       </div>
 
-      <div className={styles.headRow}>
-        {visibility.silk && <div style={{ width: SILK_COLUMN_WIDTH, flex: `0 0 ${SILK_COLUMN_WIDTH}px` }}>Silk</div>}
-        {visibility.no && <div style={{ width: colWidths.no, flex: `0 0 ${colWidths.no}px` }}>No</div>}
-        {visibility.horse && <div style={{ width: colWidths.horse, flex: `0 0 ${colWidths.horse}px` }}>Horse</div>}
-        {visibility.jt && <div style={{ width: colWidths.jt, flex: `0 0 ${colWidths.jt}px` }}>Jockey / Trainer</div>}
+      <div ref={headRowRef} className={styles.headRow}>
+        {visibility.silk && <div className={border("silk")} style={silkStyle}>Silk</div>}
+        {visibility.no && <div className={border("no")} style={noStyle}>No</div>}
+        {visibility.horse && <div className={border("horse")} style={horseStyle}>Horse</div>}
+        {visibility.jt && <div className={border("jt")} style={jtStyle}>Jockey / Trainer</div>}
         {visibility.comments && (
-          <div className={`rc-grow-cell ${styles.headCommentsCell}`} style={commentsCellStyle}>
+          <div className={`rc-grow-cell ${styles.headCommentsCell} ${border("comments")}`} style={commentsStyle}>
             Comments
           </div>
         )}
         {visibility.notes && (
-          <div
-            className={`rc-grow-cell ${styles.headNotesCell}`}
-            style={{ flex: `1 1 ${colWidths.notes}px`, minWidth: colWidths.notes }}
-          >
+          <div className={`rc-grow-cell ${styles.headNotesCell}`} style={notesStyle}>
             My Notes
           </div>
         )}
       </div>
 
+      <div className="rc-runner-list">
       {runners.map((horse, idx) => {
         const rows = flattenReports(horse, commentLimit, commentCategoryFilter);
         const hasReports = rows.length > 0;
         return (
-          <div key={horse.id} className={`${styles.row} ${horse.nonRunner ? styles.rowNonRunner : ""}`}>
+          <div key={horse.id} className={`rc-row ${styles.row} ${horse.nonRunner ? styles.rowNonRunner : ""}`}>
             {visibility.silk && (
-              <div className={styles.silkCell} style={{ width: SILK_COLUMN_WIDTH, flex: `0 0 ${SILK_COLUMN_WIDTH}px` }}>
+              <div className={`${styles.silkCell} ${border("silk")}`} style={silkStyle}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={getSilkUrl(horse.silkImage, horse.silkAssetKey, horse.name, idx)}
@@ -195,7 +229,7 @@ export function RaceCard({
             )}
 
             {visibility.no && (
-              <div className={styles.noCell} style={{ width: colWidths.no, flex: `0 0 ${colWidths.no}px`, minWidth: COLUMN_MIN_WIDTHS.no }}>
+              <div className={`${styles.noCell} ${border("no")}`} style={noStyle}>
                 <div className={`${styles.noNumber} rc-truncate`}>{horse.no}</div>
                 {horse.draw != null && <div className={`${styles.noDraw} rc-truncate`}>({horse.draw})</div>}
                 <div className={`${styles.noForm} rc-truncate`}>{horse.form || "—"}</div>
@@ -204,18 +238,19 @@ export function RaceCard({
             )}
 
             {visibility.horse && (
-              <div className={styles.horseCell} style={{ width: colWidths.horse, flex: `0 0 ${colWidths.horse}px`, minWidth: COLUMN_MIN_WIDTHS.horse }}>
-                <div className={`${styles.horseName} rc-truncate`}>{horse.name}</div>
+              <div className={`${styles.horseCell} ${border("horse")}`} style={horseStyle}>
+                <div className={styles.horseName}>{horse.name}</div>
                 {visibility.privileges && (
                   <PrivilegeTags
                     privileges={horse.privileges}
-                    onSave={(value) => onSavePrivileges(horse.id, value)}
+                    glossary={privilegeGlossary}
+                    hiddenTags={printMode ? [] : hiddenPrivTags}
                   />
                 )}
-                <div className={`${styles.horseBreeding} rc-truncate`}>
+                <div className={`${styles.horseBreeding} rc-wrap`}>
                   {horse.sire ?? "—"} — {horse.dam ?? "—"}
                 </div>
-                <div className={`${styles.horseAgeWeight} rc-truncate`}>
+                <div className={`${styles.horseAgeWeight} rc-wrap`}>
                   {[horse.ageSex, horse.weight].filter(Boolean).join(" · ")}
                 </div>
                 {horse.subnote && <div className={styles.horseSubnote}>{horse.subnote}</div>}
@@ -223,14 +258,14 @@ export function RaceCard({
             )}
 
             {visibility.jt && (
-              <div className={styles.jtCell} style={{ width: colWidths.jt, flex: `0 0 ${colWidths.jt}px`, minWidth: COLUMN_MIN_WIDTHS.jt }}>
-                <div className={`${styles.jtJockey} rc-truncate`}>{horse.jockey ?? "—"}</div>
-                <div className={`${styles.jtTrainer} rc-truncate`}>{horse.trainer ?? "—"}</div>
-                {horse.owner && <div className={`${styles.jtOwner} rc-truncate`}>{horse.owner}</div>}
+              <div className={`${styles.jtCell} ${border("jt")}`} style={jtStyle}>
+                <div className={`${styles.jtJockey} rc-wrap`}>{horse.jockey ?? "—"}</div>
+                <div className={`${styles.jtTrainer} rc-wrap`}>{horse.trainer ?? "—"}</div>
+                {horse.owner && <div className={`${styles.jtOwner} rc-wrap`}>{horse.owner}</div>}
               </div>
             )}
 
-            {visibility.comments && <div className={`rc-grow-cell ${styles.commentsCell}`} style={commentsCellStyle}>
+            {visibility.comments && <div className={`rc-grow-cell ${styles.commentsCell} ${border("comments")}`} style={commentsStyle}>
               {hasReports ? (
                 <div className={styles.timeline}>
                   {rows.map((row) => (
@@ -260,7 +295,8 @@ export function RaceCard({
 
             {visibility.notes && (
               <NotesCell
-                width={colWidths.notes}
+                columnStyle={notesStyle}
+                borderClass={border("notes")}
                 initialValue={horse.noteBody}
                 onSave={(value) => onSaveNote(horse.id, value)}
               />
@@ -268,6 +304,7 @@ export function RaceCard({
           </div>
         );
       })}
+      </div>
 
       {runners.length === 0 && (
         <div className={styles.noMatches}>

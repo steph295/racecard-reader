@@ -6,7 +6,6 @@ import {
   COLUMN_ORDER,
   DEFAULT_COLUMN_VISIBILITY,
   DEFAULT_COLUMN_WIDTHS,
-  SILK_COLUMN_WIDTH,
   type ColumnKey,
   type ColumnVisibility,
   type ColumnWidths,
@@ -14,7 +13,7 @@ import {
 
 export interface Divider {
   key: string;
-  left: number;
+  left: number | string;
   active: boolean;
   isEnd: boolean;
   onMouseDown: (e: React.MouseEvent) => void;
@@ -98,15 +97,13 @@ export function useColumnResize() {
 
   const dividers = useMemo<Divider[]>(() => {
     const result: Divider[] = [];
-    let left = visibility.silk ? SILK_COLUMN_WIDTH : 0;
     for (let i = 0; i < visibleCols.length; i++) {
-      left += colWidths[visibleCols[i]];
       if (i < visibleCols.length - 1) {
         const leftKey = visibleCols[i];
         const rightKey = visibleCols[i + 1];
         result.push({
           key: `div-${i}`,
-          left,
+          left: 0,
           active: resizingDivider === i,
           isEnd: false,
           onMouseDown: (e) => startResize(leftKey, rightKey, i, e),
@@ -116,13 +113,13 @@ export function useColumnResize() {
     const lastKey = visibleCols[visibleCols.length - 1];
     result.push({
       key: "div-end",
-      left,
+      left: 0,
       active: resizingDivider === "end",
       isEnd: true,
       onMouseDown: (e) => startResizeEnd(lastKey, e),
     });
     return result;
-  }, [visibleCols, colWidths, visibility.silk, resizingDivider, startResize, startResizeEnd]);
+  }, [visibleCols, resizingDivider, startResize, startResizeEnd]);
 
   const resetColumns = useCallback(() => {
     setColWidths(DEFAULT_COLUMN_WIDTHS);

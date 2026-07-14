@@ -1,6 +1,8 @@
 "use client";
 
+import type { PrivilegeGlossary } from "@/lib/privilegeGlossary";
 import styles from "./FiltersPanel.module.css";
+import { PrivilegeFilterRow } from "./PrivilegeFilterRow";
 
 interface FiltersPanelProps {
   open: boolean;
@@ -8,7 +10,9 @@ interface FiltersPanelProps {
   onClose: () => void;
   search: string;
   onSearchChange: (value: string) => void;
-  privilegeOptions: { tag: string; label: string; count: number }[];
+  privilegeOptions: { tag: string; count: number }[];
+  privilegeGlossary: PrivilegeGlossary;
+  onUpdatePrivilegeGlossary: (tag: string, label: string, abbr: string) => void;
   excludedPrivTags: string[];
   onTogglePrivTag: (tag: string) => void;
   commentCategoryOptions: { category: string; count: number }[];
@@ -36,6 +40,8 @@ export function FiltersPanel({
   search,
   onSearchChange,
   privilegeOptions,
+  privilegeGlossary,
+  onUpdatePrivilegeGlossary,
   excludedPrivTags,
   onTogglePrivTag,
   commentCategoryOptions,
@@ -94,20 +100,17 @@ export function FiltersPanel({
                   <div className={styles.emptyHint}>Upload a privileges sheet to filter by privilege.</div>
                 ) : (
                   <div className={styles.checkList}>
-                    {privilegeOptions.map((opt) => {
-                      const checked = !excludedPrivTags.includes(opt.tag);
-                      return (
-                        <label
-                          key={opt.tag}
-                          className={`${styles.checkRow} ${checked ? styles.checkRowChecked : ""}`}
-                          title={opt.tag}
-                        >
-                          <input type="checkbox" checked={checked} onChange={() => onTogglePrivTag(opt.tag)} />
-                          <span className={styles.checkLabel}>{opt.label}</span>
-                          <span className={styles.checkCount}>({opt.count})</span>
-                        </label>
-                      );
-                    })}
+                    {privilegeOptions.map((opt) => (
+                      <PrivilegeFilterRow
+                        key={opt.tag}
+                        tag={opt.tag}
+                        glossary={privilegeGlossary}
+                        count={opt.count}
+                        checked={!excludedPrivTags.includes(opt.tag)}
+                        onToggle={() => onTogglePrivTag(opt.tag)}
+                        onUpdate={(label, abbr) => onUpdatePrivilegeGlossary(opt.tag, label, abbr)}
+                      />
+                    ))}
                   </div>
                 )}
               </div>

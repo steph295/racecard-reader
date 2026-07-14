@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useDebouncedCallback } from "@/lib/hooks/useDebouncedCallback";
 import styles from "./NotesCell.module.css";
 
 interface NotesCellProps {
-  width: number;
+  columnStyle: CSSProperties;
+  borderClass?: string;
   initialValue: string;
   onSave: (value: string) => void;
 }
 
 /** Free-text note, saved 500ms after the user stops typing. */
-export function NotesCell({ width, initialValue, onSave }: NotesCellProps) {
+export function NotesCell({ columnStyle, borderClass = "", initialValue, onSave }: NotesCellProps) {
   // Initialized once from the fetched value; the debounced save keeps the
   // query cache in sync (see useSaveNote's onSuccess), so there's no need
   // to re-sync this local state from props afterwards.
@@ -19,7 +20,7 @@ export function NotesCell({ width, initialValue, onSave }: NotesCellProps) {
   const debouncedSave = useDebouncedCallback(onSave, 500);
 
   return (
-    <div className={`rc-notes-cell ${styles.cell}`} style={{ flex: `1 1 ${width}px`, minWidth: width }}>
+    <div className={`rc-notes-cell ${styles.cell} ${borderClass}`} style={columnStyle}>
       <textarea
         className={styles.textarea}
         value={value}

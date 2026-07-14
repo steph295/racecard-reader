@@ -14,6 +14,17 @@ function formatRelativeDate(iso: string): string {
   return date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
+function formatUploadMeta(meeting: {
+  meetingDate: string | null;
+  createdAt: string;
+  raceCount: number;
+  runnerCount: number;
+}): string {
+  const raceDate = meeting.meetingDate?.trim() || "Race date unknown";
+  const uploaded = formatRelativeDate(meeting.createdAt);
+  return `${raceDate} · Uploaded ${uploaded} · ${meeting.raceCount} races · ${meeting.runnerCount} runners`;
+}
+
 export default function UploadPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -134,7 +145,7 @@ export default function UploadPage() {
                     ? m.errorMessage ?? "Failed to parse this racecard."
                     : processing
                     ? "Processing…"
-                    : `${formatRelativeDate(m.createdAt)} · ${m.raceCount} races · ${m.runnerCount} runners`}
+                    : formatUploadMeta(m)}
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }} onClick={(e) => e.stopPropagation()}>

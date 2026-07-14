@@ -1,12 +1,38 @@
 .cell {
   padding: 10px 14px;
   box-sizing: border-box;
-  border-left: 1px solid #ececec;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@media print {
+  .cell {
+    padding: var(--rc-print-cell-padding, 4px) 0.35em !important;
+  }
+
+  .textarea {
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    overflow: hidden !important;
+  }
+
+  .textarea::placeholder {
+    color: transparent !important;
+  }
 }
 
 .textarea {
   width: 100%;
-  min-height: 56px;
+  min-height: 48px;
   border: 1px solid #e5e5e5;
   border-radius: 5px;
   padding: 6px 8px;
@@ -15,4 +41,5 @@
   color: #333;
   resize: vertical;
   box-sizing: border-box;
+  line-height: 1.35;
 }

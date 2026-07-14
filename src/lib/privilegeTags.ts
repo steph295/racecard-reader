@@ -2,79 +2,106 @@
  * Converts stored privilege strings into the short abbreviated tags stewards
  * read at a glance under the horse name.
  *
- * Stored privileges look like "RH, FED — Blind for stalls entry": abbreviated
- * flags, then optional free text after an em dash. Both parts become tags -
- * flags pass through (re-mapped to the current scheme where needed), free
- * text is keyword-matched to the closest abbreviation or shortened to 3
- * characters.
+ * Only a curated steward whitelist is shown — garbage tokens from free-text
+ * parsing (THE, IF, CRA, etc.) are dropped.
  */
 
-/** Canonical steward abbreviations, applied to free text by keyword. */
+import {
+  type PrivilegeGlossary,
+  type PrivilegeTier,
+  STEWARD_PRIVILEGES,
+  glossaryAbbr,
+  glossaryLabel,
+} from "@/lib/privilegeGlossary";
+
+export type { PrivilegeTier };
+
+const WHITELIST = new Set(Object.keys(STEWARD_PRIVILEGES));
+
+const TIER_ORDER: Record<PrivilegeTier, number> = { must: 0, good: 1 };
+
+/** Legacy / variant codes from sheet uploads and free text → canonical whitelist key. */
+const ALIASES: Record<string, string> = {
+  ES: "E",
+  TS: "WITS",
+  EP: "Ear out",
+  "EAR OUT": "Ear out",
+  "EAR IN": "Ear in",
+  EPR: "Ear in",
+  HPR: "HP",
+  RUG: "LR",
+  LD: "LR",
+};
+
+/** Free-text keyword patterns → canonical whitelist key (order matters). */
 const KEYWORD_TAGS: [RegExp, string][] = [
   [/red\s*hood/i, "RH"],
-  [/blinker/i, "B1"],
-  [/tongue\s*(tie|strap)/i, "TT"],
+  [/blinkers?\s*(first\s*time)?/i, "B1"],
+  [/withdrawn.*tongue\s*strap/i, "WITS"],
+  [/tongue\s*strap/i, "WITS"],
+  [/tongue\s*tie/i, "TT"],
   [/cheek\s*piece/i, "CP"],
   [/visor/i, "V"],
   [/wisp/i, "FW"],
-  [/ear\s*plug.*(out|remov)/i, "EAR OUT"],
-  [/ear\s*plug.*(in|throughout)/i, "EAR IN"],
-  [/hood.*parade/i, "HP"],
-  [/parade.*hood/i, "HP"],
-  [/mount/i, "MC"],
-  [/chute/i, "MC"],
+  [/ear\s*plug.*(out|remov)/i, "Ear out"],
+  [/ear\s*plug.*(in|throughout)/i, "Ear in"],
+  [/hood.*parade|parade.*hood/i, "HP"],
+  [/mount|chute/i, "MC"],
   [/starter/i, "SR"],
-  [/early/i, "E"],
-  [/blind/i, "BLD"],
-  [/stalls?\s*rug/i, "RUG"],
-  [/saddl/i, "SAD"],
-  [/load/i, "LD"],
-  [/fed|feed/i, "FED"],
+  [/early(\s*to\s*post)?/i, "E"],
+  [/(stalls?\s*)?rug|load.*rug|rug.*load/i, "LR"],
+  [/\bhood\b/i, "H"],
 ];
 
-/** Full meaning of each abbreviation, for tooltips and the filter panel. */
-const TAG_MEANINGS: Record<string, string> = {
-  RH: "Red hood",
-  E: "Early to post",
-  MC: "Mounting at start / chute",
-  FW: "Wisp in front",
-  "EAR OUT": "Earplugs taken out",
-  "EAR IN": "Earplugs staying in",
-  HP: "Hood in parade ring",
-  SR: "Starters report",
-  WITS: "Withdrawn if tongue strap",
-  B1: "Blinkers (first time)",
-  TT: "Tongue tie",
-  CP: "Cheekpieces",
-  V: "Visor",
-  LL: "Late load",
-  AS: "Assistance at start",
-  WP: "Withdrawn if any plate shed",
-  WPF: "Withdrawn if foreleg plate shed",
-  FED: "Fed on course",
-  BLD: "Blind to load",
-  RUG: "Stalls rug",
-};
-
-export function tagMeaning(tag: string): string {
-  return TAG_MEANINGS[tag.toUpperCase()] ?? tag;
+function isWhitelisted(tag: string): boolean {
+  return WHITELIST.has(tag);
 }
 
-/** Legacy flag codes from earlier sheet uploads -> current scheme. */
-const LEGACY_FLAG_MAP: Record<string, string> = {
-  ES: "E",
-  TS: "WITS",
-  EP: "EAR OUT",
-  EPR: "EAR IN",
-  HPR: "HP",
-};
+function normalizeFlag(flag: string): string | null {
+  const trimmed = flag.trim();
+  if (!trimmed) return null;
 
-function freeTextToTag(text: string): string {
+  if (/^ear\s*out$/i.test(trimmed)) return "Ear out";
+  if (/^ear\s*in$/i.test(trimmed)) return "Ear in";
+
+  const upper = trimmed.toUpperCase();
+  const alias = ALIASES[upper];
+  if (alias) return alias;
+
+  if (isWhitelisted(trimmed)) return trimmed;
+
+  const caseMatch = [...WHITELIST].find((k) => k.toUpperCase() === upper);
+  return caseMatch ?? null;
+}
+
+function freeTextToTag(text: string): string | null {
   for (const [pattern, tag] of KEYWORD_TAGS) {
     if (pattern.test(text)) return tag;
   }
-  const firstWord = text.trim().split(/\s+/)[0] ?? "";
-  return firstWord.slice(0, 3).toUpperCase();
+  return null;
+}
+
+export function privilegeTier(tag: string): PrivilegeTier | null {
+  return STEWARD_PRIVILEGES[tag]?.tier ?? null;
+}
+
+export function tagMeaning(tag: string, glossary?: PrivilegeGlossary): string {
+  if (glossary) return glossaryLabel(glossary, tag);
+  return STEWARD_PRIVILEGES[tag]?.label ?? tag;
+}
+
+export function displayTag(tag: string, glossary?: PrivilegeGlossary): string {
+  if (glossary) return glossaryAbbr(glossary, tag);
+  return STEWARD_PRIVILEGES[tag]?.abbr ?? tag;
+}
+
+export function sortPrivilegeTags(tags: string[]): string[] {
+  return [...tags].sort((a, b) => {
+    const ta = privilegeTier(a);
+    const tb = privilegeTier(b);
+    if (ta && tb && ta !== tb) return TIER_ORDER[ta] - TIER_ORDER[tb];
+    return displayTag(a).localeCompare(displayTag(b));
+  });
 }
 
 export function privilegesToTags(privileges: string | null): string[] {
@@ -83,29 +110,30 @@ export function privilegesToTags(privileges: string | null): string[] {
   const [flagPart, ...freeParts] = privileges.split("—");
   const tags: string[] = [];
 
-  // The part before the dash is a comma-separated flag list - unless the
-  // whole string is free text (no known-flag shape), then treat it as such.
   const flagCandidates = flagPart
     .split(",")
     .map((f) => f.trim())
     .filter(Boolean);
   const looksLikeFlags =
     freeParts.length > 0 ||
-    flagCandidates.every((f) => /^[A-Za-z0-9]{1,4}$/.test(f) || /^Ear (in|out)$/i.test(f));
+    flagCandidates.every((f) => /^[A-Za-z0-9]{1,6}$/.test(f) || /^Ear (in|out)$/i.test(f));
 
   if (looksLikeFlags) {
     for (const flag of flagCandidates) {
-      const upper = flag.toUpperCase();
-      tags.push(LEGACY_FLAG_MAP[upper] ?? upper);
+      const normalized = normalizeFlag(flag);
+      if (normalized) tags.push(normalized);
     }
   } else {
-    tags.push(freeTextToTag(flagPart));
+    const fromText = freeTextToTag(flagPart);
+    if (fromText) tags.push(fromText);
   }
 
   for (const part of freeParts.join("—").split(";")) {
     const text = part.trim();
-    if (text) tags.push(freeTextToTag(text));
+    if (!text) continue;
+    const fromText = freeTextToTag(text);
+    if (fromText) tags.push(fromText);
   }
 
-  return [...new Set(tags)];
+  return sortPrivilegeTags([...new Set(tags)]);
 }

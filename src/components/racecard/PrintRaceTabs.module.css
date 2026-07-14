@@ -6,10 +6,27 @@
 @media print {
   .strip {
     display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 10px;
+    flex-wrap: nowrap;
+    gap: 0.12em;
+    margin-bottom: 0.2em;
     break-inside: avoid;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-size: var(--rc-print-font-size, 10px);
+  }
+
+  .tab {
+    padding: 0.12em 0.3em;
+    border-radius: 0.2em;
+    flex: 0 0 auto;
+  }
+
+  .tabRace {
+    font-size: 0.9em;
+  }
+
+  .tabTime {
+    font-size: 0.78em;
   }
 }
 

@@ -29,7 +29,7 @@ button {
 
 @page {
   size: portrait;
-  margin: 12mm;
+  margin: 5mm;
 }
 
 /* ---- Racecard table chrome: shared globally (not CSS-modules-scoped)
@@ -42,10 +42,50 @@ button {
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
   box-sizing: border-box;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+
+.rc-race-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.rc-shell > .rc-race-page:only-of-type {
+  flex: 0 1 auto;
+  width: 100%;
+  align-self: stretch;
+}
+
+.rc-runner-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.rc-runner-list .rc-row {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  align-items: flex-start;
+}
+
+.rc-grow-cell {
+  min-width: 0;
+}
+
+.rc-row .rc-notes-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.rc-row .rc-notes-cell textarea {
+  min-height: 48px;
+  height: auto;
 }
 
 /* On-screen truncation for narrow columns; lifted at print time below so
@@ -54,6 +94,12 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.rc-wrap {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 @media print {
@@ -71,35 +117,96 @@ button {
     overflow: visible !important;
   }
 
+  .rc-race-page {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
+  }
+
+  .rc-race-page > * {
+    flex-shrink: 0;
+  }
+
   .rc-card {
     box-shadow: none;
     border: none;
     border-radius: 0;
     width: 100%;
     max-width: 100%;
-    overflow: visible !important;
-    zoom: 1; /* overridden per-render by the injected #rc-print-zoom style */
+    overflow: hidden !important;
+    margin-bottom: 0 !important;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    font-size: var(--rc-print-font-size, 12px);
+    line-height: var(--rc-print-line-height, 1.2);
+  }
+
+  .rc-card > *:not(.rc-runner-list) {
+    flex-shrink: 0;
+  }
+
+  .rc-runner-list {
+    flex: 0 0 var(--rc-print-rows-area, auto);
+    height: var(--rc-print-rows-area, auto);
+    max-height: var(--rc-print-rows-area, auto);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .rc-runner-list .rc-row {
+    flex: 0 0 var(--rc-print-row-height, auto);
+    height: var(--rc-print-row-height, auto);
+    min-height: var(--rc-print-row-height, auto);
+    max-height: var(--rc-print-row-height, auto);
+    align-items: stretch;
+    overflow: hidden;
+    box-sizing: border-box;
+    position: relative;
+    isolation: isolate;
+  }
+
+  .rc-runner-list .rc-row > * {
+    box-sizing: border-box;
+    overflow: hidden;
+    min-height: 0;
+    line-height: var(--rc-print-line-height, 1.2);
   }
 
   .rc-card .rc-grow-cell {
-    flex-grow: 1 !important;
     min-width: 0 !important;
   }
 
-  /* The non-negotiable bit: never truncate text on paper, no matter how
-     narrow the on-screen column widths were configured. */
   .rc-card .rc-truncate {
     white-space: normal !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     text-overflow: clip !important;
     overflow-wrap: break-word !important;
     word-break: break-word !important;
   }
 
+  .rc-row .rc-notes-cell {
+    height: 100%;
+  }
+
   .rc-notes-cell textarea {
-    min-height: 100px !important;
-    border: 1px solid #bbb !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
     resize: none !important;
+    overflow: hidden !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
